@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Budget Buddy">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="description" content="Your personal budget companion with Buck the deer">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>Budget Buddy — Buck</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode">🌙</button>
+        <!-- SPLASH / WELCOME -->
+        <section id="scene-welcome" class="scene active">
+            <div class="pet-container">
+                <div class="pet buck" id="buck">
+                    <div class="buck-body">
+                        <div class="buck-face">
+                            <div class="eyes">
+                                <div class="eye left"><div class="pupil"></div></div>
+                                <div class="eye right"><div class="pupil"></div></div>
+                            </div>
+                            <div class="nose"></div>
+                            <div class="mouth"></div>
+                            <div class="cheeks">
+                                <div class="cheek left"></div>
+                                <div class="cheek right"></div>
+                            </div>
+                        </div>
+                        <div class="ears">
+                            <div class="ear left"></div>
+                            <div class="ear right"></div>
+                        </div>
+                        <div class="antlers">
+                            <div class="antler left">
+                                <div class="antler-branch a1"></div>
+                                <div class="antler-branch a2"></div>
+                            </div>
+                            <div class="antler right">
+                                <div class="antler-branch a1"></div>
+                                <div class="antler-branch a2"></div>
+                            </div>
+                        </div>
+                        <div class="sparkles">
+                            <span></span><span></span><span></span><span></span>
+                        </div>
+                    </div>
+                    <div class="shadow"></div>
+                </div>
+            </div>
+            <h1>Hey, I'm Buck!</h1>
+            <p class="sub">Your budget buddy who keeps it real.<br>Let's build your money plan together.</p>
+            <button class="btn-primary" onclick="goto('income')" id="btn-start">Let's Go! 🚀</button>
+        </section>
+
+        <!-- INCOME WIZARD -->
+        <section id="scene-income" class="scene">
+            <div class="pet-mini"><div class="buck-body mini"><div class="buck-face"><div class="eyes"><div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div></div><div class="nose"></div><div class="mouth"></div></div></div></div>
+            <div class="chat-bubble" id="income-bubble">How much money do you make a month?</div>
+
+            <div class="form-card">
+                <label>Your Monthly Income</label>
+                <div class="money-input">
+                    <span class="dollar">$</span>
+                    <input type="number" id="total-income" placeholder="0.00" min="0" step="0.01">
+                </div>
+
+                <div class="income-breakdown" id="income-breakdown">
+                    <p class="help-text">Where's it coming from? (pick all that apply)</p>
+                    <div class="chip-grid">
+                        <button class="chip" data-type="job" onclick="toggleChip(this)">💼 Day job</button>
+                        <button class="chip" data-type="side" onclick="toggleChip(this)">🚀 Side hustle</button>
+                        <button class="chip" data-type="freelance" onclick="toggleChip(this)">💻 Freelance</button>
+                        <button class="chip" data-type="investment" onclick="toggleChip(this)">📈 Investments</button>
+                        <button class="chip" data-type="rental" onclick="toggleChip(this)">🏠 Rental income</button>
+                        <button class="chip" data-type="other" onclick="toggleChip(this)">✨ Other</button>
+                    </div>
+                </div>
+
+                <div class="recurring-toggle-row" style="margin:16px 0;display:flex;align-items:center;gap:12px;justify-content:center;">
+                    <label class="switch-label" style="margin-bottom:0;">
+                        <span class="switch">
+                            <input type="checkbox" id="income-recurring-toggle">
+                            <span class="slider"></span>
+                        </span>
+                        <span>Recurring every month</span>
+                    </label>
+                </div>
+
+                <button class="btn-primary" onclick="saveIncome()" id="btn-income-next">Next Step →</button>
+            </div>
+        </section>
+
+        <!-- BUDGET SETUP -->
+        <section id="scene-budget-setup" class="scene">
+            <!-- Step Navigation -->
+            <div class="step-nav">
+                <button class="step-pill active" onclick="goto('budget-setup')">1 — Budget</button>
+                <button class="step-pill" onclick="goto('tracker')">2 — Tracker</button>
+                <button class="step-pill" onclick="goto('dashboard')">3 — Review</button>
+            </div>
+
+            <div class="tracker-top-bar">
+                <div>
+                    <div class="tracker-top-title">Build Your Budget</div>
+                    <div class="tracker-top-month" id="budget-top-month">June 2026</div>
+                </div>
+                <div class="tracker-top-actions" style="display:flex;align-items:center;gap:8px;">
+                    <select id="budget-month-select" class="tracker-select" onchange="onMonthChange(this)" style="margin:0;padding:6px 10px;font-size:13px;border-radius:10px;background:var(--card);color:var(--text);border:1px solid #e2e8f0;">
+                        <option value="">Select month...</option>
+                    </select>
+                    <button class="icon-btn" onclick="goto('tracker')" title="Tracker">💰</button>
+                    <button class="icon-btn" onclick="goto('dashboard')" title="Dashboard">📊</button>
+                </div>
+            </div>
+
+            <!-- Buck on Step 1 -->
+            <div class="card status-card">
+                <div class="pet-status">
+                    <div class="buck-body" id="budget-buck-body">
+                        <div class="buck-face">
+                            <div class="eyes"><div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div></div>
+                            <div class="nose"></div>
+                            <div class="mouth" id="budget-buck-mouth"></div>
+                        </div>
+                        <div class="ears"><div class="ear left"></div><div class="ear right"></div></div>
+                        <div class="antlers"><div class="antler left"><div class="antler-branch a1"></div><div class="antler-branch a2"></div></div><div class="antler right"><div class="antler-branch a1"></div><div class="antler-branch a2"></div></div></div>
+                    </div>
+                    <div class="hunger-bar-container">
+                        <div class="hunger-label">Buck's Budget Health</div>
+                        <div class="hunger-bar"><div class="hunger-fill" id="budget-hunger-fill"></div></div>
+                    </div>
+                </div>
+                <div class="status-text">
+                    <div class="chat-bubble" id="budget-bubble" style="margin:0;max-width:100%;">Tap each category to break down your budget. Buck will do the math!</div>
+                </div>
+            </div>
+
+            <!-- Base Income Section -->
+            <div class="form-card">
+                <div class="form-header">
+                    <h3>💵 Base Income</h3>
+                    <div class="income-display" id="budget-income-display">$0</div>
+                </div>
+                <p class="help-text">How much money do you have coming in this month?</p>
+                <div class="money-input compact">
+                    <span class="dollar">$</span>
+                    <input type="number" id="budget-income-input" placeholder="0.00" min="0" step="0.01">
+                </div>
+                <div class="income-breakdown" id="budget-income-breakdown">
+                    <p class="help-text">Where's it coming from? (pick all that apply)</p>
+                    <div class="chip-grid">
+                        <button class="chip" data-type="job" onclick="toggleChip(this)">💼 Day job</button>
+                        <button class="chip" data-type="side" onclick="toggleChip(this)">🚀 Side hustle</button>
+                        <button class="chip" data-type="freelance" onclick="toggleChip(this)">💻 Freelance</button>
+                        <button class="chip" data-type="investment" onclick="toggleChip(this)">📈 Investments</button>
+                        <button class="chip" data-type="rental" onclick="toggleChip(this)">🏠 Rental income</button>
+                        <button class="chip" data-type="other" onclick="toggleChip(this)">✨ Other</button>
+                    </div>
+                </div>
+                <div class="recurring-toggle-row" style="margin:16px 0;display:flex;align-items:center;gap:12px;justify-content:center;">
+                    <label class="switch-label" style="margin-bottom:0;">
+                        <span class="switch">
+                            <input type="checkbox" id="budget-income-recurring">
+                            <span class="slider"></span>
+                        </span>
+                        <span>Recurring every month</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Extra Income Section -->
+            <div class="form-card extra-income-card">
+                <div class="form-header">
+                    <h3>🚀 Extra Income</h3>
+                    <div class="income-display" id="budget-extra-display">$0</div>
+                </div>
+                <p class="help-text">Side check, reimbursement, random cash — add it here</p>
+                <div class="tracker-input-row">
+                    <div class="money-input" style="margin-bottom:0;flex:1;">
+                        <span class="dollar">$</span>
+                        <input type="number" id="budget-extra-amount" placeholder="0.00" min="0" step="0.01">
+                    </div>
+                    <input type="text" id="budget-extra-name" placeholder="What was it?" class="text-input" style="flex:2;margin-bottom:0;">
+                    <button class="btn-primary" onclick="addBudgetExtraIncome()" style="width:auto;padding:14px 20px;">Add</button>
+                </div>
+                <div class="extra-source-chips" style="margin-top:12px;">
+                    <p class="help-text" style="margin-bottom:8px;">Where's it coming from?</p>
+                    <div class="chip-grid" id="budget-extra-chips">
+                        <button class="chip" data-source="side" onclick="toggleExtraSourceChip(this)">🚀 Side hustle</button>
+                        <button class="chip" data-source="freelance" onclick="toggleExtraSourceChip(this)">💻 Freelance</button>
+                        <button class="chip" data-source="investment" onclick="toggleExtraSourceChip(this)">📈 Investments</button>
+                        <button class="chip" data-source="rental" onclick="toggleExtraSourceChip(this)">🏠 Rental</button>
+                        <button class="chip" data-source="bonus" onclick="toggleExtraSourceChip(this)">🏆 Bonus</button>
+                        <button class="chip" data-source="gift" onclick="toggleExtraSourceChip(this)">🎁 Gift</button>
+                        <button class="chip" data-source="reimbursement" onclick="toggleExtraSourceChip(this)">🔄 Reimbursement</button>
+                        <button class="chip" data-source="sold" onclick="toggleExtraSourceChip(this)">💰 Sold something</button>
+                        <button class="chip" data-source="taxrefund" onclick="toggleExtraSourceChip(this)">📋 Tax refund</button>
+                        <button class="chip" data-source="other" onclick="toggleExtraSourceChip(this)">✨ Other</button>
+                    </div>
+                </div>
+                <div id="budget-extra-list"></div>
+            </div>
+
+            <div class="chat-bubble" id="budget-help-bubble">ℹ️ <strong>How to:</strong> Tap a category to expand it. Enter what you plan to spend on each item. Buck adds it all up. Hit <strong>Save Budget Plan</strong> when you're done!
+            </div>
+
+            <div class="form-card">
+                <div id="budget-categories"></div>
+                <div id="budget-total-display"></div>
+                <button class="btn-primary" onclick="saveBudgetPlan()" style="margin-top:16px;">Save Budget Plan ✅</button>
+            </div>
+        </section>
+
+        <!-- DAILY TRACKER (Main Screen) -->
+        <section id="scene-tracker" class="scene">
+            <!-- Step Navigation -->
+            <div class="step-nav">
+                <button class="step-pill" onclick="goto('budget-setup')">1 — Budget</button>
+                <button class="step-pill active" onclick="goto('tracker')">2 — Tracker</button>
+                <button class="step-pill" onclick="goto('dashboard')">3 — Review</button>
+            </div>
+
+            <div class="tracker-top-bar">
+                <div>
+                    <div class="tracker-top-title">Budget Buddy</div>
+                    <div class="tracker-top-month" id="tracker-top-month">June 2026</div>
+                </div>
+                <div class="tracker-top-actions" style="display:flex;align-items:center;gap:8px;">
+                    <select id="tracker-month-select" class="tracker-select" onchange="onMonthChange(this)" style="margin:0;padding:6px 10px;font-size:13px;border-radius:10px;background:var(--card);color:var(--text);border:1px solid #e2e8f0;">
+                        <option value="">Select month...</option>
+                    </select>
+                    <button class="icon-btn" onclick="newMonth()" title="Start New Month">🔄</button>
+                    <button class="icon-btn" onclick="goto('budget-setup')" title="Edit Budget">✏️</button>
+                    <button class="icon-btn" onclick="goto('dashboard')" title="View Dashboard">📊</button>
+                </div>
+            </div>
+
+            <!-- Buck Status -->
+            <div class="card status-card">
+                <div class="pet-status">
+                    <div class="buck-body" id="tracker-buck-body">
+                        <div class="buck-face">
+                            <div class="eyes"><div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div></div>
+                            <div class="nose"></div>
+                            <div class="mouth" id="tracker-buck-mouth"></div>
+                        </div>
+                        <div class="ears"><div class="ear left"></div><div class="ear right"></div></div>
+                        <div class="antlers"><div class="antler left"><div class="antler-branch a1"></div><div class="antler-branch a2"></div></div><div class="antler right"><div class="antler-branch a1"></div><div class="antler-branch a2"></div></div></div>
+                    </div>
+                    <div class="hunger-bar-container">
+                        <div class="hunger-label">Buck's Budget Health</div>
+                        <div class="hunger-bar"><div class="hunger-fill" id="tracker-hunger-fill"></div></div>
+                    </div>
+                </div>
+                <div class="status-text">
+                    <div class="chat-bubble" id="tracker-bubble" style="margin:0;max-width:100%;">Let's see how you're doing!</div>
+                </div>
+            </div>
+
+            <!-- Quick Numbers -->
+            <div class="card numbers-card">
+                <div class="number-row">
+                    <div class="number-item income">
+                        <span class="number-label">Base Income</span>
+                        <span class="number-value" id="tracker-income">$0</span>
+                    </div>
+                    <div class="number-item extra">
+                        <span class="number-label">Extra</span>
+                        <span class="number-value" id="tracker-extra-income">$0</span>
+                    </div>
+                    <div class="number-item spent">
+                        <span class="number-label">Spent</span>
+                        <span class="number-value" id="tracker-actual">$0</span>
+                    </div>
+                    <div class="number-item left" id="tracker-left-container">
+                        <span class="number-label">Left Over</span>
+                        <span class="number-value" id="tracker-left">$0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Two Pie Charts: Budget Plan vs Actual -->
+            <div class="card pie-card">
+                <h3>📊 Your Money at a Glance</h3>
+                <div class="two-pies">
+                    <div class="pie-block">
+                        <div class="pie-title">Budget Plan</div>
+                        <div class="pie-wrap">
+                            <svg viewBox="0 0 100 100" class="pie-chart" id="tracker-pie-budget"></svg>
+                            <div class="pie-center">
+                                <span class="pie-pct" id="tracker-pie-budget-pct">0%</span>
+                                <span class="pie-label">allocated</span>
+                            </div>
+                        </div>
+                        <div class="pie-legend" id="tracker-pie-budget-legend"></div>
+                    </div>
+                    <div class="pie-divider"></div>
+                    <div class="pie-block">
+                        <div class="pie-title">After Spending</div>
+                        <div class="pie-wrap">
+                            <svg viewBox="0 0 100 100" class="pie-chart" id="tracker-pie-actual"></svg>
+                            <div class="pie-center">
+                                <span class="pie-pct" id="tracker-pie-actual-pct">0%</span>
+                                <span class="pie-label">left</span>
+                            </div>
+                        </div>
+                        <div class="pie-legend" id="tracker-pie-actual-legend"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Extra Income Summary (read-only, managed on Budget page) -->
+            <div class="card extra-income-card" id="tracker-extra-summary">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                    <h3 style="margin:0;">🚀 Extra Income</h3>
+                    <span class="number-value" style="color:var(--accent);font-size:20px;" id="tracker-extra-total">$0</span>
+                </div>
+                <div id="tracker-extra-list-compact"></div>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+                    <p class="help-text" style="margin:0;font-size:12px;">Manage extra income on the Budget page</p>
+                    <button class="btn-link" onclick="goto('budget-setup')" style="font-size:12px;padding:4px 10px;border-radius:8px;background:var(--accent-light);color:var(--accent);border:none;font-weight:600;cursor:pointer;">Go →</button>
+                </div>
+            </div>
+
+            <!-- Quick Add -->
+            <div class="card tracker-quick-add">
+                <h3>🔫 Log a Purchase</h3>
+                <div class="tracker-form">
+                    <div class="tracker-input-row" style="margin-bottom:10px;">
+                        <select id="tracker-cat-select" class="tracker-select" style="margin-bottom:0;flex:2;-webkit-appearance:none;-moz-appearance:none;appearance:none;background:var(--card);">
+                            <option value="">Pick a category...</option>
+                        </select>
+                        <input type="date" id="tracker-date" class="tracker-date" style="flex:1;-webkit-appearance:none;-moz-appearance:none;appearance:none;background:var(--card);">
+                    </div>
+                    <div class="tracker-input-row">
+                        <div class="money-input" style="margin-bottom:0;flex:1;">
+                            <span class="dollar">$</span>
+                            <input type="number" id="tracker-amount" placeholder="0.00" min="0" step="0.01">
+                        </div>
+                        <input type="text" id="tracker-name" placeholder="What was it?" class="text-input" style="flex:2;margin-bottom:0;">
+                        <button class="btn-primary" onclick="addTransaction()" style="width:auto;padding:14px 20px;">Add</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Progress -->
+            <div class="card">
+                <h3>📈 Budget vs Actual</h3>
+                <div id="tracker-bars"></div>
+            </div>
+
+            <!-- Recent Transactions -->
+            <div class="card">
+                <h3>📝 Recent Purchases</h3>
+                <div id="tracker-transactions"></div>
+            </div>
+        </section>
+
+        <!-- DASHBOARD -->
+        <section id="scene-dashboard" class="scene">
+            <!-- Step Navigation -->
+            <div class="step-nav">
+                <button class="step-pill" onclick="goto('budget-setup')">1 — Budget</button>
+                <button class="step-pill" onclick="goto('tracker')">2 — Tracker</button>
+                <button class="step-pill active" onclick="goto('dashboard')">3 — Review</button>
+            </div>
+
+            <div class="tracker-top-bar">
+                <div>
+                    <div class="tracker-top-title">Budget Buddy</div>
+                    <div class="tracker-top-month" id="dash-top-month">June 2026</div>
+                </div>
+                <div class="tracker-top-actions" style="display:flex;align-items:center;gap:8px;">
+                    <select id="dash-month-select" class="tracker-select" onchange="onMonthChange(this)" style="margin:0;padding:6px 10px;font-size:13px;border-radius:10px;background:var(--card);color:var(--text);border:1px solid #e2e8f0;">
+                        <option value="">Select month...</option>
+                    </select>
+                    <button class="icon-btn" onclick="goto('tracker')" title="Tracker">💰</button>
+                    <button class="icon-btn" onclick="goto('budget-setup')" title="Edit Budget">✏️</button>
+                    <button class="icon-btn" onclick="printReport()" title="Print / Save PDF">🖨️</button>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <!-- Status Card -->
+                <div class="card status-card" id="status-card">
+                    <div class="pet-status" id="pet-status">
+                        <div class="buck-body" id="buck-status">
+                            <div class="buck-face">
+                                <div class="eyes"><div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div></div>
+                                <div class="nose"></div>
+                                <div class="mouth" id="buck-mouth"></div>
+                            </div>
+                            <div class="ears"><div class="ear left"></div><div class="ear right"></div></div>
+                            <div class="antlers"><div class="antler left"><div class="antler-branch a1"></div><div class="antler-branch a2"></div></div><div class="antler right"><div class="antler-branch a1"></div><div class="antler-branch a2"></div></div></div>
+                        </div>
+                        <div class="hunger-bar-container">
+                            <div class="hunger-label">Buck's Health</div>
+                            <div class="hunger-bar"><div class="hunger-fill" id="hunger-fill"></div></div>
+                        </div>
+                    </div>
+                    <div class="status-text" id="status-text">
+                        <h3 id="status-headline">Loading...</h3>
+                        <p id="status-message">...</p>
+                    </div>
+                </div>
+
+                <!-- Big Numbers -->
+                <div class="card numbers-card">
+                    <div class="number-row">
+                        <div class="number-item income">
+                            <span class="number-label">Income</span>
+                            <span class="number-value" id="dash-income">$0</span>
+                        </div>
+                        <div class="number-item spent">
+                            <span class="number-label">Spent</span>
+                            <span class="number-value" id="dash-spent">$0</span>
+                        </div>
+                        <div class="number-item left" id="left-container">
+                            <span class="number-label">Left Over</span>
+                            <span class="number-value" id="dash-left">$0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Savings Pot Card -->
+                <div class="card savings-pot-card" id="savings-pot-card">
+                    <div class="pot-header">
+                        <h3>💰 Savings Goals</h3>
+                    </div>
+                    <div id="savings-pots-list"></div>
+                    <button class="btn-add" onclick="startNewPot()">+ Start a New Savings Goal</button>
+                </div>
+
+                <!-- Achievements -->
+                <div class="card achievements-card" id="achievements-card">
+                    <h3>🏆 Achievements</h3>
+                    <div class="badges-row" id="badges-row"></div>
+                </div>
+
+                <!-- Water Status -->
+                <div class="card water-card" id="water-card">
+                    <div class="water-icon">🌊</div>
+                    <h3>Underwater Check</h3>
+                    <p id="water-text">Loading...</p>
+                    <div class="water-depth" id="water-depth">
+                        <div class="water-fill" id="water-fill"></div>
+                        <div class="safe-zone">Safe Zone</div>
+                    </div>
+                </div>
+
+                <!-- Breakdown -->
+                <div class="card breakdown-card">
+                    <h3>Where Your Money Went</h3>
+                    <div class="breakdown-list" id="breakdown-list"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- NEW MONTH MODAL -->
+        <div class="modal hidden" id="new-month-modal">
+            <div class="modal-overlay" onclick="closeModal('new-month-modal')"></div>
+            <div class="modal-content">
+                <h3>Start a New Month</h3>
+                <p class="help-text">Recurring expenses carry over. Adjust anything that changed.</p>
+                <div class="recurring-list" id="recurring-list"></div>
+                <div class="modal-actions">
+                    <button class="btn-secondary" onclick="closeModal('new-month-modal')">Cancel</button>
+                    <button class="btn-primary" onclick="confirmNewMonth()">Start New Month 🚀</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- EDIT GOAL MODAL -->
+        <div class="modal hidden" id="edit-goal-modal">
+            <div class="modal-overlay" onclick="closeModal('edit-goal-modal')"></div>
+            <div class="modal-content">
+                <h3>Edit Savings Goal</h3>
+                <input type="hidden" id="edit-goal-pot-id">
+                <label style="display:block;margin-bottom:6px;font-size:13px;color:var(--text-light);">Target Amount</label>
+                <div class="money-input">
+                    <span class="dollar">$</span>
+                    <input type="number" id="edit-goal-amount" class="text-input" placeholder="5000" min="0" step="0.01">
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-secondary" onclick="closeModal('edit-goal-modal')">Cancel</button>
+                    <button class="btn-primary" onclick="savePotGoal()">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RENAME POT MODAL -->
+        <div class="modal hidden" id="rename-pot-modal">
+            <div class="modal-overlay" onclick="closeModal('rename-pot-modal')"></div>
+            <div class="modal-content">
+                <h3>Name Your Savings Goal</h3>
+                <input type="hidden" id="pot-rename-id">
+                <input type="text" id="pot-name-input" class="text-input" placeholder="e.g. New Car, Vacation, Gaming PC">
+                <div class="modal-actions">
+                    <button class="btn-secondary" onclick="closeModal('rename-pot-modal')">Cancel</button>
+                    <button class="btn-primary" onclick="savePotName()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRINTABLE REPORT (hidden until print) -->
+    <div id="print-report" class="print-only">
+        <div class="print-header">
+            <h1>Budget Report</h1>
+            <p id="print-month">Month</p>
+            <p class="print-sub">Generated by Budget Buddy</p>
+        </div>
+        <div class="print-summary">
+            <div class="print-box"><span>Income</span><strong id="print-income">$0</strong></div>
+            <div class="print-box"><span>Spent</span><strong id="print-spent">$0</strong></div>
+            <div class="print-box"><span>Left Over</span><strong id="print-left">$0</strong></div>
+        </div>
+        <div class="print-section">
+            <h2>Expenses by Category</h2>
+            <div id="print-breakdown"></div>
+        </div>
+        <div class="print-section">
+            <h2>All Transactions</h2>
+            <div id="print-transactions"></div>
+        </div>
+        <div class="print-footer">
+            <p>Keep it up! — Buck 🦌</p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

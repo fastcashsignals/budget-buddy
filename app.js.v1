@@ -1,0 +1,420 @@
+/* ═══════════════════════════════════════════════════════════════
+   BUDGET BUDDY — APP LOGIC
+   ═══════════════════════════════════════════════════════════════ */
+
+// ─── EXPENSE CATEGORIES ───
+const CATEGORIES = [
+    { id:'housing',     name:'Housing',       icon:'🏠', desc:'Rent, mortgage, HOA, property tax' },
+    { id:'utilities',   name:'Utilities',     icon:'💡', desc:'Electric, gas, water, internet, phone' },
+    { id:'transport',   name:'Transportation',icon:'🚗', desc:'Car payment, gas, insurance, maintenance, transit' },
+    { id:'food',        name:'Food & Dining', icon:'🍔', desc:'Groceries, restaurants, delivery, coffee' },
+    { id:'subscriptions',name:'Subscriptions',icon:'📺', desc:'Netflix, Spotify, gym, apps, memberships' },
+    { id:'shopping',    name:'Shopping',      icon:'🛍️', desc:'Clothes, electronics, Amazon, impulse buys' },
+    { id:'entertainment',name:'Fun & Going Out',icon:'🎮', desc:'Movies, games, concerts, bars, hobbies' },
+    { id:'debt',        name:'Debt Payments', icon:'💳', desc:'Credit cards, student loans, personal loans' },
+    { id:'savings',     name:'Savings & Investing',icon:'🏦', desc:'Emergency fund, 401k, stocks, crypto' },
+    { id:'personal',    name:'Personal Care', icon:'💇', desc:'Haircuts, skincare, doctor, therapy, gym' },
+    { id:'family',      name:'Family & Pets', icon:'👶', desc:'Kids, pets, childcare, school, gifts' },
+    { id:'misc',        name:'Everything Else',icon:'🤷', desc:"Random stuff that doesn't fit anywhere" }
+];
+
+// ─── STATE ───
+let state = {
+    income: 0,
+    incomeSources: [],
+    expenses: {},     // { categoryId: [{name,amount}, ...] }
+    month: new Date().toLocaleString('en-US',{month:'long',year:'numeric'})
+};
+
+// Load from localStorage
+function loadState() {
+    const saved = localStorage.getItem('budgetBuddy');
+    if (saved) {
+        try {
+            const parsed = JSON.parse(saved);
+            state = { ...state, ...parsed };
+            return true;
+        } catch(e) { console.error('Bad saved state', e); }
+    }
+    return false;
+}
+
+function saveState() {
+    localStorage.setItem('budgetBuddy', JSON.stringify(state));
+}
+
+// ─── NAVIGATION ───
+function goto(sceneId) {
+    document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById('scene-' + sceneId);
+    if (target) {
+        target.classList.add('active');
+        window.scrollTo(0,0);
+    }
+
+    // Scene-specific init
+    if (sceneId === 'expenses') initExpenses();
+    if (sceneId === 'dashboard') renderDashboard();
+}
+
+// ─── INCOME ───
+function toggleChip(btn) {
+    btn.classList.toggle('active');
+    const type = btn.dataset.type;
+    if (btn.classList.contains('active')) {
+        if (!state.incomeSources.includes(type)) state.incomeSources.push(type);
+    } else {
+        state.incomeSources = state.incomeSources.filter(s => s !== type);
+    }
+}
+
+function saveIncome() {
+    const val = parseFloat(document.getElementById('total-income').value) || 0;
+    if (val <= 0) {
+        shakeElement(document.getElementById('total-income').parentElement);
+        return;
+    }
+    state.income = val;
+    saveState();
+    goto('expenses');
+}
+
+// ─── EXPENSES ───
+let currentEditCategory = null;
+
+function initExpenses() {
+    const container = document.getElementById('expense-categories');
+    container.innerHTML = '';
+
+    CATEGORIES.forEach(cat => {
+        const items = state.expenses[cat.id] || [];
+        const total = items.reduce((s,i) => s + (parseFloat(i.amount)||0), 0);
+        const done = items.length > 0;
+
+        const card = document.createElement('div');
+        card.className = 'expense-cat-card' + (done ? ' done' : '');
+        card.innerHTML = `
+            <div class="cat-icon">${cat.icon}</div>
+            <div class="cat-info">
+                <div class="cat-name">${cat.name}</div>
+                <div class="cat-desc">${done ? '$'+formatMoney(total) +' spent' : cat.desc}</div>
+            </div>
+            <div class="cat-check">${done ? '✓' : ''}</div>
+        `;
+        card.onclick = () => openExpenseForm(cat.id);
+        container.appendChild(card);
+    });
+
+    // Show progress
+    const doneCount = Object.keys(state.expenses).filter(k => state.expenses[k].length).length;
+    const pct = Math.round((doneCount / CATEGORIES.length) * 100);
+
+    const bubble = document.getElementById('expense-bubble');
+    if (doneCount === 0) {
+        bubble.textContent = "Time to track where your money goes. Don't worry, no judgment here!";
+    } else if (doneCount < CATEGORIES.length) {
+        bubble.textContent = `You're ${pct}% done! Keep going — every detail helps you find where to cut back.`;
+    } else {
+        bubble.textContent = "All caught up! Ready to see how Buck is doing?";
+    }
+}
+
+function openExpenseForm(catId) {
+    currentEditCategory = catId;
+    const cat = CATEGORIES.find(c => c.id === catId);
+    document.getElementById('expense-category-title').textContent = cat.icon + ' ' + cat.name;
+
+    const container = document.getElementById('expense-items-container');
+    container.innerHTML = '';
+
+    const items = state.expenses[catId] || [];
+    if (items.length === 0) {
+        addExpenseItem(); // Start with one blank row
+    } else {
+        items.forEach((item, idx) => {
+            addExpenseItem(item.name, item.amount, idx);
+        });
+    }
+
+    document.getElementById('expense-detail-form').classList.remove('hidden');
+}
+
+function addExpenseItem(name='', amount='', idx=null) {
+    const container = document.getElementById('expense-items-container');
+    const row = document.createElement('div');
+    row.className = 'expense-item-row';
+    row.innerHTML = `
+        <input type="text" placeholder="What did you buy?" value="${escapeHtml(name)}" class="item-name">
+        <div class="item-amount">
+            <span>$</span>
+            <input type="number" placeholder="0.00" value="${amount}" min="0" step="0.01" class="item-cost">
+        </div>
+        <button class="btn-remove" onclick="this.parentElement.remove()">🗑️</button>
+    `;
+    container.appendChild(row);
+
+    // Focus the name input if it's blank
+    if (!name) {
+        setTimeout(() => row.querySelector('.item-name').focus(), 50);
+    }
+}
+
+function closeExpenseForm() {
+    // Save
+    const rows = document.querySelectorAll('#expense-items-container .expense-item-row');
+    const items = [];
+    rows.forEach(row => {
+        const name = row.querySelector('.item-name').value.trim();
+        const amt = parseFloat(row.querySelector('.item-cost').value) || 0;
+        if (name && amt > 0) items.push({ name, amount: amt });
+    });
+
+    if (items.length > 0) {
+        state.expenses[currentEditCategory] = items;
+    } else {
+        delete state.expenses[currentEditCategory];
+    }
+
+    saveState();
+    document.getElementById('expense-detail-form').classList.add('hidden');
+    initExpenses();
+}
+
+// ─── DASHBOARD ───
+function renderDashboard() {
+    document.getElementById('month-label').textContent = state.month;
+
+    const totalSpent = Object.values(state.expenses).flat()
+        .reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
+    const left = state.income - totalSpent;
+    const pctSpent = state.income > 0 ? (totalSpent / state.income) * 100 : 0;
+
+    // Numbers
+    document.getElementById('dash-income').textContent = '$' + formatMoney(state.income);
+    document.getElementById('dash-spent').textContent = '$' + formatMoney(totalSpent);
+    document.getElementById('dash-left').textContent = (left < 0 ? '-$' : '$') + formatMoney(Math.abs(left));
+
+    const leftContainer = document.getElementById('left-container');
+    leftContainer.className = 'number-item left' + (left < 0 ? ' negative' : '');
+
+    // Buck's health
+    const healthPct = Math.max(0, Math.min(100, 100 - pctSpent));
+    const hungerFill = document.getElementById('hunger-fill');
+    hungerFill.style.width = healthPct + '%';
+
+    // Buck's expression
+    const mouth = document.getElementById('buck-mouth');
+    const eyes = document.querySelectorAll('#buck-status .eye');
+    const statusHeadline = document.getElementById('status-headline');
+    const statusMessage = document.getElementById('status-message');
+
+    if (left > 0) {
+        mouth.className = 'mouth happy';
+        eyes.forEach(e => e.style.borderRadius = '50%'); // Normal eyes
+        hungerFill.style.background = 'var(--accent)';
+        if (left > state.income * 0.2) {
+            statusHeadline.textContent = "Buck is thriving! 🌟";
+            statusMessage.textContent = `You've got $${formatMoney(left)} left. That's solid — keep it up!`;
+        } else {
+            statusHeadline.textContent = "Buck is okay, but hungry 😐";
+            statusMessage.textContent = `Only $${formatMoney(left)} left. Tight month, but you're not underwater.`;
+        }
+    } else if (left === 0) {
+        mouth.className = 'mouth';
+        hungerFill.style.background = 'var(--warn)';
+        statusHeadline.textContent = "Buck is surviving 🫠";
+        statusMessage.textContent = "Break even. Not great, not terrible.";
+    } else {
+        mouth.className = 'mouth sad';
+        hungerFill.style.background = 'var(--danger)';
+        statusHeadline.textContent = "Buck is starving! 🆘";
+        statusMessage.textContent = `You're $${formatMoney(Math.abs(left))} underwater. Time to cut something.`;
+    }
+
+    // Water check
+    const waterCard = document.getElementById('water-card');
+    const waterText = document.getElementById('water-text');
+    const waterFill = document.getElementById('water-fill');
+    const waterPct = Math.min(100, pctSpent);
+
+    waterFill.style.width = waterPct + '%';
+    if (pctSpent > 100) {
+        waterCard.className = 'card water-card underwater';
+        waterText.textContent = `You're ${(pctSpent - 100).toFixed(0)}% underwater! 💸`;
+        waterFill.style.width = '100%';
+    } else if (pctSpent > 85) {
+        waterCard.className = 'card water-card warning';
+        waterText.textContent = `You're cutting it close — ${(100 - pctSpent).toFixed(0)}% buffer left.`;
+    } else {
+        waterCard.className = 'card water-card';
+        waterText.textContent = `You're in the safe zone — ${(100 - pctSpent).toFixed(0)}% of income unspent.`;
+    }
+
+    // Breakdown list
+    const breakdownList = document.getElementById('breakdown-list');
+    breakdownList.innerHTML = '';
+
+    const catTotals = Object.entries(state.expenses)
+        .map(([id, items]) => ({
+            id,
+            total: items.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0),
+            cat: CATEGORIES.find(c => c.id === id)
+        }))
+        .filter(c => c.total > 0)
+        .sort((a, b) => b.total - a.total);
+
+    const maxCat = catTotals[0]?.total || 1;
+
+    catTotals.forEach(({id, total, cat}) => {
+        const pct = (total / maxCat) * 100;
+        const row = document.createElement('div');
+        row.className = 'breakdown-item';
+        row.innerHTML = `
+            <div class="breakdown-icon" style="background:${getCatColor(id)}">${cat.icon}</div>
+            <div class="breakdown-info">
+                <div class="breakdown-name">${cat.name}</div>
+                <div class="breakdown-bar-bg">
+                    <div class="breakdown-bar-fill" style="width:${pct}%;background:${getCatColor(id)}"></div>
+                </div>
+            </div>
+            <div class="breakdown-amount">$${formatMoney(total)}</div>
+        `;
+
+        // Click to edit
+        row.style.cursor = 'pointer';
+        row.onclick = () => {
+            goto('expenses');
+            setTimeout(() => openExpenseForm(id), 100);
+        };
+
+        breakdownList.appendChild(row);
+    });
+
+    if (catTotals.length === 0) {
+        breakdownList.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:20px;">No expenses tracked yet. Go add some!</p>';
+    }
+
+    // Celebrate if thriving!
+    if (left > state.income * 0.2) {
+        fireConfetti();
+    }
+}
+
+// ─── HELPERS ───
+function formatMoney(n) {
+    return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function shakeElement(el) {
+    el.style.animation = 'none';
+    el.offsetHeight; // trigger reflow
+    el.style.animation = 'shake 0.5s ease';
+}
+
+// Add shake keyframes dynamically
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes shake {
+        0%,100% { transform:translateX(0); }
+        20%,60% { transform:translateX(-8px); }
+        40%,80% { transform:translateX(8px); }
+    }
+`;
+document.head.appendChild(style);
+
+function getCatColor(id) {
+    const colors = {
+        housing:'#ef4444', utilities:'#f97316', transport:'#eab308',
+        food:'#22c55e', subscriptions:'#a855f7', shopping:'#ec4899',
+        entertainment:'#3b82f6', debt:'#dc2626', savings:'#06b6d4',
+        personal:'#14b8a6', family:'#f59e0b', misc:'#8b5cf6'
+    };
+    return colors[id] || '#94a3b8';
+}
+
+// ─── DASHBOARD ACTIONS ───
+function editBudget() {
+    goto('expenses');
+}
+
+function resetBudget() {
+    if (!confirm("Start a fresh budget? This clears everything.")) return;
+    state = {
+        income: 0,
+        incomeSources: [],
+        expenses: {},
+        month: new Date().toLocaleString('en-US',{month:'long',year:'numeric'})
+    };
+    saveState();
+    goto('income');
+}
+
+// ─── CONFETTI ───
+function fireConfetti() {
+    const canvas = document.createElement('canvas');
+    canvas.id = 'confetti-canvas';
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const particles = [];
+    const colors = ['#22c55e','#3b82f6','#f59e0b','#ec4899','#06b6d4','#8b5cf6'];
+
+    for (let i = 0; i < 100; i++) {
+        particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height - canvas.height,
+            vx: (Math.random() - 0.5) * 4,
+            vy: Math.random() * 4 + 2,
+            size: Math.random() * 8 + 4,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            rot: Math.random() * 360,
+            rotSpeed: (Math.random() - 0.5) * 10
+        });
+    }
+
+    let frame = 0;
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.rot += p.rotSpeed;
+            p.vy += 0.1; // gravity
+
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate((p.rot * Math.PI) / 180);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+            ctx.restore();
+        });
+
+        frame++;
+        if (frame < 120) requestAnimationFrame(animate);
+        else canvas.remove();
+    }
+    animate();
+}
+
+// ─── INIT ───
+document.addEventListener('DOMContentLoaded', () => {
+    const hasData = loadState();
+    if (hasData && state.income > 0) {
+        goto('dashboard');
+    } else {
+        goto('welcome');
+    }
+
+    // Enter key on income field
+    document.getElementById('total-income').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') saveIncome();
+    });
+});
