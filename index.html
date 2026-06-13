@@ -112,12 +112,12 @@
                     <div class="tracker-top-title">Build Your Budget</div>
                     <div class="tracker-top-month" id="budget-top-month">June 2026</div>
                 </div>
-                <div class="tracker-top-actions" style="display:flex;align-items:center;gap:8px;">
+                <div class="tracker-top-actions" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                     <select id="budget-month-select" class="tracker-select" onchange="onMonthChange(this)" style="margin:0;padding:6px 10px;font-size:13px;border-radius:10px;background:var(--card);color:var(--text);border:1px solid #e2e8f0;">
                         <option value="">Select month...</option>
                     </select>
-                    <button class="icon-btn" onclick="goto('tracker')" title="Tracker">💰</button>
-                    <button class="icon-btn" onclick="goto('dashboard')" title="Dashboard">📊</button>
+                    <button class="nav-btn" onclick="goto('tracker')">💰 Tracker</button>
+                    <button class="nav-btn" onclick="goto('dashboard')">📊 Review</button>
                 </div>
             </div>
 
@@ -233,13 +233,13 @@
                     <div class="tracker-top-title">Budget Buddy</div>
                     <div class="tracker-top-month" id="tracker-top-month">June 2026</div>
                 </div>
-                <div class="tracker-top-actions" style="display:flex;align-items:center;gap:8px;">
+                <div class="tracker-top-actions" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                     <select id="tracker-month-select" class="tracker-select" onchange="onMonthChange(this)" style="margin:0;padding:6px 10px;font-size:13px;border-radius:10px;background:var(--card);color:var(--text);border:1px solid #e2e8f0;">
                         <option value="">Select month...</option>
                     </select>
-                    <button class="icon-btn" onclick="newMonth()" title="Start New Month">🔄</button>
-                    <button class="icon-btn" onclick="goto('budget-setup')" title="Edit Budget">✏️</button>
-                    <button class="icon-btn" onclick="goto('dashboard')" title="View Dashboard">📊</button>
+                    <button class="nav-btn" onclick="newMonth()">🔄 New</button>
+                    <button class="nav-btn" onclick="goto('budget-setup')">✏️ Budget</button>
+                    <button class="nav-btn" onclick="goto('dashboard')">📊 Review</button>
                 </div>
             </div>
 
@@ -378,13 +378,13 @@
                     <div class="tracker-top-title">Budget Buddy</div>
                     <div class="tracker-top-month" id="dash-top-month">June 2026</div>
                 </div>
-                <div class="tracker-top-actions" style="display:flex;align-items:center;gap:8px;">
+                <div class="tracker-top-actions" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                     <select id="dash-month-select" class="tracker-select" onchange="onMonthChange(this)" style="margin:0;padding:6px 10px;font-size:13px;border-radius:10px;background:var(--card);color:var(--text);border:1px solid #e2e8f0;">
                         <option value="">Select month...</option>
                     </select>
-                    <button class="icon-btn" onclick="goto('tracker')" title="Tracker">💰</button>
-                    <button class="icon-btn" onclick="goto('budget-setup')" title="Edit Budget">✏️</button>
-                    <button class="icon-btn" onclick="printReport()" title="Print / Save PDF">🖨️</button>
+                    <button class="nav-btn" onclick="goto('tracker')">💰 Tracker</button>
+                    <button class="nav-btn" onclick="goto('budget-setup')">✏️ Budget</button>
+                    <button class="nav-btn" onclick="printReport()">🖨️ Print</button>
                 </div>
             </div>
 

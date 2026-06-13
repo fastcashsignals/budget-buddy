@@ -14,10 +14,10 @@ const CATEGORIES = [
       subItems: ['🚗 Car Payment','⛽ Gas','🛡️ Car Insurance','🔧 Maintenance / Repairs','🅿️ Parking / Tolls'] },
     { id:'food',        name:'Food & Dining', icon:'🍔', desc:'Groceries, restaurants, delivery, coffee',
       subItems: ['🛒 Groceries','🍽️ Restaurants','🥡 Delivery / Takeout','☕ Coffee / Snacks','🍺 Alcohol / Bars'] },
-    { id:'subscriptions',name:'Subscriptions',icon:'📺', desc:'Gym, apps, memberships, box subscriptions',
-      subItems: ['🎵 Music (Spotify, Apple Music)','💪 Gym / Fitness','📱 Apps / Software','📰 Magazines / News','☁️ Cloud Storage','📦 Meal Kits / Boxes'] },
     { id:'streaming',    name:'Streaming',     icon:'🎬', desc:'Netflix, Hulu, Disney+, Spotify, and more',
       subItems: ['Netflix 🎬','Hulu 📺','Disney+ ✨','Max 🍿','Amazon Prime Video 🛍️','Apple TV+ 🍎','Paramount+ 🎬','Peacock 🦚','YouTube Premium 📺','Crunchyroll 🍥','Discovery+ 🔍','Spotify 🎵','Apple Music 🎶','Tidal 🎵','YouTube Music 🎹','Pandora 📻','Audible 🎧','SiriusXM 📡'] },
+    { id:'subscriptions',name:'Subscriptions',icon:'📺', desc:'Gym, apps, memberships, box subscriptions',
+      subItems: ['🎵 Music (Spotify, Apple Music)','💪 Gym / Fitness','📱 Apps / Software','📰 Magazines / News','☁️ Cloud Storage','📦 Meal Kits / Boxes'] },
     { id:'shopping',    name:'Shopping',      icon:'🛍️', desc:'Clothes, electronics, Amazon, impulse buys',
       subItems: ['👕 Clothes / Shoes','💻 Electronics / Tech','📦 Amazon / Online','🎁 Gifts','🤷 Impulse / Random'] },
     { id:'entertainment',name:'Fun & Going Out',icon:'🎮', desc:'Movies, games, concerts, bars, hobbies',
@@ -26,8 +26,10 @@ const CATEGORIES = [
       subItems: ['💳 Credit Card','🎓 Student Loan','💰 Personal Loan','🏥 Medical Debt','⏳ Buy Now Pay Later'] },
     { id:'savings',     name:'Savings & Investing',icon:'🏦', desc:'Emergency fund, 401k, stocks, crypto, savings goals',
       subItems: ['🚨 Emergency Fund','🏖️ 401k / Retirement','📈 Stocks / ETFs','₿ Crypto','💎 High-Yield Savings'] },
-    { id:'personal',    name:'Personal Care', icon:'💇', desc:'Haircuts, skincare, doctor, therapy, gym',
-      subItems: ['✂️ Haircuts / Salon','💄 Skincare / Makeup','🩺 Doctor / Medical','🧠 Therapy / Mental Health','🏋️ Gym (if not sub)'] },
+    { id:'health',      name:'Health & Medical', icon:'🩺', desc:'Doctor visits, prescriptions, therapy, dental, vision',
+      subItems: ['🩺 Doctor / Primary Care','💊 Prescriptions / Pharmacy','🏥 Medical Bills / Procedures','🧠 Therapy / Mental Health','🦷 Dental','👁️ Vision / Glasses'] },
+    { id:'personal',    name:'Personal Care', icon:'💇', desc:'Haircuts, skincare, nails, grooming, spa',
+      subItems: ['✂️ Haircuts / Salon','💄 Skincare / Makeup','💅 Nails / Manicure','👣 Pedicure / Toes','🧴 Spa / Massage','🪒 Grooming / Shaving'] },
     { id:'family',      name:'Family & Pets', icon:'👶', desc:'Kids, pets, childcare, school, gifts',
       subItems: ['👶 Childcare / Daycare','🐕 Pet Food / Supplies','🐈 Vet / Pet Care','🏫 School / Activities','🧸 Kids Clothes / Gear'] },
     { id:'misc',        name:'Everything Else',icon:'🤷', desc:"Random stuff that doesn't fit anywhere",
@@ -38,9 +40,9 @@ const CATEGORIES = [
 function getCategoryColor(catId) {
     const colors = {
         housing: '#ef4444', utilities: '#f97316', transport: '#f59e0b',
-        food: '#84cc16', subscriptions: '#06b6d4', streaming: '#8b5cf6',
+        food: '#84cc16', streaming: '#8b5cf6', subscriptions: '#06b6d4',
         shopping: '#a855f7', entertainment: '#ec4899', debt: '#dc2626',
-        savings: '#10b981', personal: '#d946ef', family: '#f43f5e', misc: '#64748b'
+        savings: '#10b981', health: '#14b8a6', personal: '#d946ef', family: '#f43f5e', misc: '#64748b'
     };
     return colors[catId] || '#94a3b8';
 }

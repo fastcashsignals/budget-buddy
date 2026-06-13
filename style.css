@@ -858,6 +858,30 @@ label {
 
 .icon-btn:hover { background:#e2e8f0; }
 
+/* Labeled nav buttons */
+.nav-btn {
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    padding:8px 10px;
+    border-radius:10px;
+    border:none;
+    background:#f1f5f9;
+    font-size:12px;
+    font-weight:600;
+    color:var(--text);
+    cursor:pointer;
+    transition:all 0.2s;
+    white-space:nowrap;
+    font-family:inherit;
+}
+.nav-btn:hover { background:#e2e8f0; }
+
+[data-theme="dark"] .nav-btn {
+    background:#0f172a;
+    color:var(--text);
+}
+
 .dashboard-grid {
     display:flex;
     flex-direction:column;
@@ -1816,6 +1840,7 @@ label {
     gap:8px;
     margin-bottom:16px;
     padding:4px;
+    padding-right:56px;
     background:#f1f5f9;
     border-radius:12px;
 }
