@@ -2147,11 +2147,18 @@ function editBudget() {
 }
 
 function resetBudget() {
-    if (!confirm("Start completely over? This deletes EVERYTHING — budget, transactions, savings history, all of it.")) return;
+    if (!confirm("Start completely over? This deletes EVERYTHING \u2014 budget, transactions, savings history, all of it.")) return;
+
+    // Clear all Budget Buddy data from localStorage
+    Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('budgetBuddy_')) localStorage.removeItem(key);
+    });
+
     state = {
         budgetIncome: 0,
         budgetIncomeSources: [],
         budgetCategories: {},
+        budgetSubItems: {},
         transactions: [],
         goals: {},
         savingsPots: [{
@@ -2168,10 +2175,14 @@ function resetBudget() {
         setupComplete: false,
         income: 0,
         incomeSources: [],
-        expenses: {}
+        expenses: {},
+        recurringIncome: 0,
+        recurringIncomeSources: [],
+        recurringBudget: {},
+        extraIncome: []
     };
     saveState();
-    goto('welcome');
+    window.location.reload();
 }
 
 // ─── CONFETTI ───
