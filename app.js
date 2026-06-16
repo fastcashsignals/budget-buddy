@@ -1701,11 +1701,23 @@ function renderSavingsPots() {
             <div class="pot-info">
                 <div class="pot-name-row">
                     <span class="pot-name">${escapeHtml(pot.name)}</span>
-                    <div style="display:flex;gap:4px;">
-                        <button class="btn-icon" onclick="editPotBudget('${pot.id}')" title="Edit Monthly Amount">💵</button>
-                        <button class="btn-icon" onclick="editPotGoal('${pot.id}')" title="Edit Goal">📊</button>
-                        <button class="btn-icon" onclick="renamePot('${pot.id}')" title="Rename">✏️</button>
-                        ${state.savingsPots.length > 1 ? `<button class="btn-icon" onclick="deletePot('${pot.id}')" title="Delete">🗑️</button>` : ''}
+                    <div class="pot-actions">
+                        <button class="btn-icon" onclick="editPotBudget('${pot.id}')" title="Edit Monthly Amount">
+                            <span class="btn-icon-emoji">💵</span>
+                            <span class="btn-icon-label">Monthly</span>
+                        </button>
+                        <button class="btn-icon" onclick="editPotGoal('${pot.id}')" title="Edit Goal">
+                            <span class="btn-icon-emoji">📊</span>
+                            <span class="btn-icon-label">Goal</span>
+                        </button>
+                        <button class="btn-icon" onclick="renamePot('${pot.id}')" title="Rename">
+                            <span class="btn-icon-emoji">✏️</span>
+                            <span class="btn-icon-label">Rename</span>
+                        </button>
+                        ${state.savingsPots.length > 1 ? `<button class="btn-icon" onclick="deletePot('${pot.id}')" title="Delete">
+                            <span class="btn-icon-emoji">🗑️</span>
+                            <span class="btn-icon-label">Delete</span>
+                        </button>` : ''}
                     </div>
                 </div>
                 <div class="pot-total">$${formatMoney(runningTotal)}</div>

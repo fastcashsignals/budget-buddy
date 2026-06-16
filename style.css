@@ -1066,19 +1066,57 @@ label {
 .pot-name-row .pot-name {
     flex:1;
     margin-bottom:0;
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+.pot-actions {
+    display:flex;
+    align-items:center;
+    gap:6px;
+    flex-shrink:0;
 }
 .pot-name-row .btn-icon {
-    font-size:14px;
-    opacity:0.4;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:2px;
+    min-width:48px;
+    min-height:44px;
+    padding:4px 6px;
+    font-size:12px;
+    opacity:0.7;
+    background:var(--bg);
+    border:1px solid var(--card);
+    border-radius:10px;
+    transition:all 0.15s ease;
 }
 .pot-name-row .btn-icon:hover {
     opacity:1;
+    background:var(--accent-light);
+    border-color:var(--accent);
+    transform:translateY(-1px);
 }
-
-.pot-compact {
-    padding:12px 0;
-    border-bottom:1px solid #f1f5f9;
+.pot-name-row .btn-icon .btn-icon-emoji {
+    font-size:16px;
+    line-height:1;
 }
+.pot-name-row .btn-icon .btn-icon-label {
+    font-size:9px;
+    font-weight:600;
+    color:var(--text-light);
+    line-height:1;
+    text-transform:capitalize;
+}
+.pot-name-row .btn-icon:hover .btn-icon-label {
+     color:var(--text);
+ }
++.pot-compact {
+     padding:12px 0;
+     border-bottom:1px solid #f1f5f9;
+ }
 .pot-compact:last-child {
     border-bottom:none;
 }
