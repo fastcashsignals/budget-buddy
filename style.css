@@ -2200,3 +2200,145 @@ select, input[type="date"] {
     .sub-item-input-wrap { width:110px; }
     .sub-item-custom-name { min-width:80px; }
 }
+
+/* ═══ WELCOME & INCOME SCREENS ═══ */
+.welcome-hero {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.welcome-mascot {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 16px;
+}
+
+.welcome-mascot .buck-body {
+    width: 140px;
+    height: 160px;
+    transform: scale(1.2);
+}
+
+.welcome-title {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 6px;
+}
+
+.welcome-subtitle {
+    font-size: 16px;
+    color: var(--text-light);
+    margin: 0;
+}
+
+.welcome-card {
+    padding: 28px;
+    text-align: center;
+}
+
+.welcome-card-content {
+    margin-bottom: 24px;
+}
+
+.welcome-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.welcome-card h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 20px;
+}
+
+.welcome-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-align: left;
+}
+
+.welcome-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 15px;
+    color: var(--text-light);
+    padding: 12px 16px;
+    background: var(--bg);
+    border-radius: 12px;
+}
+
+.welcome-step-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: var(--accent);
+    color: white;
+    font-weight: 700;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.btn-welcome {
+    width: 100%;
+    padding: 16px 24px;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+#scene-income .status-card {
+    margin-bottom: 20px;
+}
+
+#scene-income .form-card {
+    padding: 24px;
+}
+
+#scene-income .form-header {
+    margin-bottom: 8px;
+}
+
+#scene-income .form-header h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0;
+}
+
+#scene-income .help-text {
+    margin-bottom: 16px;
+}
+
+/* Income scene Buck animation */
+#income-buck-mouth {
+    transition: all 0.3s ease;
+}
+
+/* Welcome mascot float animation */
+.welcome-mascot {
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+.welcome-mascot .shadow {
+    width: 80px;
+    height: 12px;
+    background: rgba(0,0,0,0.15);
+    border-radius: 50%;
+    margin: 8px auto 0;
+    animation: shadow 3s ease-in-out infinite;
+}
+
+@keyframes shadow {
+    0%, 100% { transform: scaleX(1); opacity: 0.15; }
+    50% { transform: scaleX(0.8); opacity: 0.1; }
+}

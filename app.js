@@ -513,6 +513,7 @@ function goto(sceneId) {
         target.classList.add('active');
         window.scrollTo(0, 0);
     }
+    if (sceneId === 'income') initIncome();
     if (sceneId === 'budget-setup') initBudgetSetup();
     if (sceneId === 'tracker') initTracker();
     if (sceneId === 'dashboard') renderDashboard();
@@ -558,6 +559,34 @@ function saveIncome() {
     saveState();
     playPop();
     goto('budget-setup');
+}
+
+function initIncome() {
+    // Set month
+    const monthEl = document.getElementById('income-top-month');
+    if (monthEl) monthEl.textContent = state.currentMonth;
+
+    // Pre-fill income
+    const incomeInput = document.getElementById('total-income');
+    if (incomeInput) incomeInput.value = state.budgetIncome > 0 ? state.budgetIncome : '';
+
+    // Set chips
+    document.querySelectorAll('#scene-income .chip').forEach(chip => {
+        chip.classList.toggle('active', state.budgetIncomeSources.includes(chip.dataset.type));
+    });
+
+    // Set recurring toggle
+    const recurringToggle = document.getElementById('income-recurring-toggle');
+    if (recurringToggle) {
+        recurringToggle.checked = state.recurringIncome > 0 && state.recurringIncome === state.budgetIncome;
+    }
+
+    // Animate Buck's health bar
+    const fill = document.getElementById('income-hunger-fill');
+    if (fill) {
+        fill.style.width = '0%';
+        setTimeout(() => { fill.style.width = '100%'; }, 100);
+    }
 }
 
 // ——— BUDGET SETUP ———
@@ -2200,9 +2229,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const savedTheme = localStorage.getItem('bb_theme');
-    if (savedTheme === 'dark') {
+    if (savedTheme === 'light') {
+        document.documentElement.dataset.theme = 'light';
+        document.getElementById('theme-toggle').textContent = '🌙';
+    } else {
+        // Default to dark mode
         document.documentElement.dataset.theme = 'dark';
         document.getElementById('theme-toggle').textContent = '☀️';
+        if (!savedTheme) localStorage.setItem('bb_theme', 'dark');
     }
 
     loadState();
