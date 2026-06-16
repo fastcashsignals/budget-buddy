@@ -1698,6 +1698,7 @@ label {
     margin-bottom:10px;
     overflow:hidden;
     transition:all 0.2s;
+    box-shadow:var(--shadow);
 }
 .budget-cat-wrap.has-data { border-color:var(--accent); }
 .budget-cat-wrap.has-data .budget-cat-header { background:var(--accent-light); }
@@ -1858,7 +1859,7 @@ label {
 
 /* Dark mode budget setup overrides */
 [data-theme="dark"] .budget-header { background:#1e293b; }
-[data-theme="dark"] .budget-cat-wrap { background:#0f172a; border-color:#334155; }
+[data-theme="dark"] .budget-cat-wrap { background:var(--card); border-color:#334155; }
 [data-theme="dark"] .budget-cat-wrap.has-data { border-color:var(--accent); }
 [data-theme="dark"] .budget-cat-wrap.has-data .budget-cat-header { background:rgba(34,197,94,0.12); }
 [data-theme="dark"] .budget-cat-header:hover { background:#1e293b; }
