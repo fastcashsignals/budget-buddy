@@ -254,6 +254,16 @@
                 <div id="budget-total-display"></div>
                 <button class="btn-primary" onclick="saveBudgetPlan()" style="margin-top:16px;">Save Budget Plan ✅</button>
             </div>
+
+            <!-- Yearly Bills Section -->
+            <div class="form-card yearly-bills-card" id="yearly-bills-card">
+                <div class="form-header">
+                    <h3>📅 Yearly Bills</h3>
+                </div>
+                <p class="help-text">Subscription sinking fund — save monthly so you're ready when annual bills hit.</p>
+                <div id="yearly-bills-list"></div>
+                <button class="btn-add" onclick="startNewYearlyBill()">+ Add Yearly Bill</button>
+            </div>
         </section>
 
         <!-- DAILY TRACKER (Main Screen) -->
@@ -474,15 +484,6 @@
                     </div>
                     <div id="savings-pots-list"></div>
                     <button class="btn-add" onclick="startNewPot()">+ Start a New Savings Goal</button>
-                </div>
-
-                <!-- Yearly Bills Card -->
-                <div class="card yearly-bills-card" id="yearly-bills-card">
-                    <div class="pot-header">
-                        <h3>📅 Yearly Bills</h3>
-                    </div>
-                    <div id="yearly-bills-list"></div>
-                    <button class="btn-add" onclick="startNewYearlyBill()">+ Add Yearly Bill</button>
                 </div>
 
                 <!-- Achievements -->

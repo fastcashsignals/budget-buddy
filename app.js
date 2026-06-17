@@ -853,6 +853,9 @@ function initBudgetSetup() {
     } else {
         bubble.textContent = `You've budgeted ${filled} of ${CATEGORIES.length} categories. Tap any to edit the breakdown.`;
     }
+
+    // Render yearly bills on budget page
+    renderYearlyBills();
 }
 
 function updateBudgetBuck() {
@@ -1752,7 +1755,7 @@ function renderYearlyBills() {
                         · Due ${monthNames[bill.dueMonth]} ${bill.dueDay}
                         ${reminder ? `<span class="yearly-bill-reminder ${reminder.level}">${reminder.msg}</span>` : ''}
                     </div>
-                    <div class="yearly-bill-save">Save <strong>$${formatMoney(monthlyAmt)}</strong>/mo</div>
+                    <div class="yearly-bill-save">Save <strong>$${formatWhole(monthlyAmt)}</strong>/mo</div>
                 </div>
                 <div class="yearly-bill-actions">
                     ${saved >= bill.yearlyAmount ? `<button class="btn-icon" onclick="markYearlyBillPaid('${bill.id}')" title="Mark Paid">
@@ -1832,7 +1835,7 @@ function updateYearlyBillPreview() {
     };
     const monthly = getYearlyBillMonthlyAmount(previewBill);
     const modeText = mode === 'catchup' ? 'Catch-up mode' : 'Steady mode';
-    document.getElementById('yearly-bill-preview').innerHTML = `<strong>${modeText}:</strong> Save <strong>$${formatMoney(monthly)}</strong> per month`;
+    document.getElementById('yearly-bill-preview').innerHTML = `<strong>${modeText}:</strong> Save <strong>$${formatWhole(monthly)}</strong> per month`;
 }
 
 function saveYearlyBill() {
@@ -2059,9 +2062,6 @@ function renderDashboard() {
 
     // Savings Pot
     renderSavingsPots();
-
-    // Yearly Bills
-    renderYearlyBills();
 
     // Breakdown (budget vs actual)
     renderBreakdown();
@@ -2517,6 +2517,10 @@ function pickRandom(arr) {
 
 function formatMoney(n) {
     return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatWhole(n) {
+    return Math.round(n).toLocaleString('en-US');
 }
 
 function escapeHtml(str) {
