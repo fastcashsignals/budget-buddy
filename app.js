@@ -518,6 +518,7 @@ function goto(sceneId) {
         target.classList.add('active');
         window.scrollTo(0, 0);
     }
+    localStorage.setItem('bb_last_scene', sceneId);
     if (sceneId === 'income') initIncome();
     if (sceneId === 'budget-setup') initBudgetSetup();
     if (sceneId === 'tracker') initTracker();
@@ -776,65 +777,6 @@ function initBudgetSetup() {
         container.appendChild(wrapper);
     });
 
-    // ═══ YEARLY BILLS SECTION ═══
-    const yearlyItems = getYearlyBillsBudgetItems();
-    if (yearlyItems.length > 0) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'budget-cat-wrap has-data yearly-bills-cat';
-        wrapper.dataset.cat = 'yearly_bills';
-
-        const total = yearlyItems.reduce((sum, item) => {
-            const savedSub = state.budgetSubItems['yearly_bills'] || {};
-            return sum + (savedSub[item.key] || item.amount);
-        }, 0);
-
-        const header = document.createElement('div');
-        header.className = 'budget-cat-header';
-        header.innerHTML = `
-            <div class="cat-icon">📅</div>
-            <div class="cat-info">
-                <div class="cat-name">Yearly Bills</div>
-                <div class="cat-desc">Subscription sinking fund — save monthly for annual bills</div>
-            </div>
-            <div class="budget-cat-total" id="cat-total-yearly_bills">$${formatMoney(total)}</div>
-            <div class="budget-cat-arrow">▼</div>
-        `;
-        header.onclick = () => toggleCatExpand(wrapper);
-
-        const body = document.createElement('div');
-        body.className = 'budget-cat-body open';
-        body.id = 'cat-body-yearly_bills';
-
-        const subList = document.createElement('div');
-        subList.className = 'sub-item-list';
-
-        yearlyItems.forEach(item => {
-            const savedSub = state.budgetSubItems['yearly_bills'] || {};
-            const val = savedSub[item.key] || item.amount;
-            const row = document.createElement('div');
-            row.className = 'sub-item-row pot-row';
-            row.innerHTML = `
-                <span class="sub-item-name" style="color:var(--accent);font-weight:600;">${item.key}</span>
-                <div class="sub-item-input-wrap">
-                    <span class="sub-item-dollar">$</span>
-                    <input type="number" class="sub-item-input" data-cat="yearly_bills" data-sub="${item.key}" placeholder="0" value="${val > 0 ? val : ''}" min="0" step="0.01">
-                </div>
-                <label class="switch-label" style="margin:0;flex-shrink:0;" title="Recurring every month">
-                    <span class="switch small">
-                        <input type="checkbox" class="recurring-toggle" data-cat="yearly_bills" data-sub="${item.key}" checked>
-                        <span class="slider"></span>
-                    </span>
-                </label>
-            `;
-            subList.appendChild(row);
-        });
-
-        body.appendChild(subList);
-        wrapper.appendChild(header);
-        wrapper.appendChild(body);
-        container.appendChild(wrapper);
-    }
-
     // Live total updater for all sub-item inputs
     container.querySelectorAll('.sub-item-input').forEach(input => {
         input.addEventListener('input', () => {
@@ -1025,6 +967,10 @@ function updateBudgetTotal() {
             total += parseFloat(inp.value) || 0;
         });
     });
+    // Add yearly bill inputs from standalone card
+    document.querySelectorAll('.yearly-bill-input').forEach(inp => {
+        total += parseFloat(inp.value) || 0;
+    });
     const totalIncome = state.budgetIncome + getTotalExtraIncome();
     const remaining = totalIncome - total;
     const el = document.getElementById('budget-total-display');
@@ -1102,6 +1048,25 @@ function saveBudgetPlan() {
             newSubItems[catId] = catSubs;
         }
     });
+
+    // Collect yearly bill inputs from the standalone card
+    const yearlyBillSubs = {};
+    let yearlyBillTotal = 0;
+    document.querySelectorAll('.yearly-bill-input').forEach(input => {
+        const billId = input.dataset.bill;
+        const bill = state.yearlyBills.find(b => b.id === billId);
+        if (!bill) return;
+        const val = parseFloat(input.value) || 0;
+        if (val > 0) {
+            const key = `📅 ${bill.name}`;
+            yearlyBillSubs[key] = val;
+            yearlyBillTotal += val;
+        }
+    });
+    if (yearlyBillTotal > 0) {
+        newBudget['yearly_bills'] = yearlyBillTotal;
+        newSubItems['yearly_bills'] = yearlyBillSubs;
+    }
 
     const totalBudgeted = Object.values(newBudget).reduce((a, b) => a + b, 0);
     if (totalBudgeted === 0) {
@@ -1730,6 +1695,8 @@ function renderYearlyBills() {
     }
 
     const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const savedSub = state.budgetSubItems['yearly_bills'] || {};
+    let totalMonthly = 0;
 
     state.yearlyBills.forEach(bill => {
         if (bill.status === 'cancelled') return;
@@ -1737,9 +1704,11 @@ function renderYearlyBills() {
         const monthlyAmt = getYearlyBillMonthlyAmount(bill);
         const saved = bill.savedAmount || 0;
         const pct = Math.min(100, (saved / bill.yearlyAmount) * 100);
-        const daysLeft = getYearlyBillDaysUntil(bill);
         const reminder = getYearlyBillReminder(bill);
         const isCancelAfterTerm = bill.status === 'cancel_after_term';
+        const key = `📅 ${bill.name}`;
+        const budgeted = savedSub[key] || monthlyAmt;
+        totalMonthly += budgeted;
 
         const el = document.createElement('div');
         el.className = 'yearly-bill-row' + (isCancelAfterTerm ? ' cancelling' : '');
@@ -1777,8 +1746,36 @@ function renderYearlyBills() {
             <div class="yearly-bill-progress">
                 <div class="yearly-bill-fill" style="width:${pct}%"></div>
             </div>
+            <div class="yearly-bill-budget-row">
+                <span class="sub-item-dollar">$</span>
+                <input type="number" class="yearly-bill-input" data-bill="${bill.id}" placeholder="0" value="${budgeted > 0 ? Math.round(budgeted) : ''}" min="0" step="1">
+                <span class="yearly-bill-input-label">/mo in budget</span>
+            </div>
         `;
         container.appendChild(el);
+    });
+
+    // Add total row
+    if (totalMonthly > 0) {
+        const totalEl = document.createElement('div');
+        totalEl.className = 'yearly-bill-total-row';
+        totalEl.innerHTML = `<strong>Total:</strong> $${formatWhole(totalMonthly)}/mo for yearly bills`;
+        container.appendChild(totalEl);
+    }
+
+    // Wire up inputs
+    container.querySelectorAll('.yearly-bill-input').forEach(input => {
+        input.addEventListener('input', () => {
+            const billId = input.dataset.bill;
+            const bill = state.yearlyBills.find(b => b.id === billId);
+            if (!bill) return;
+            const key = `📅 ${bill.name}`;
+            const val = parseFloat(input.value) || 0;
+            if (!state.budgetSubItems['yearly_bills']) state.budgetSubItems['yearly_bills'] = {};
+            state.budgetSubItems['yearly_bills'][key] = val;
+            // Re-render total
+            renderYearlyBills();
+        });
     });
 }
 
@@ -1876,6 +1873,13 @@ function saveYearlyBill() {
     saveGlobalState();
     closeModal('yearly-bill-modal');
     renderYearlyBills();
+
+    // Auto-refresh budget setup if on that page
+    const budgetScene = document.getElementById('scene-budget-setup');
+    if (budgetScene && budgetScene.classList.contains('active')) {
+        initBudgetSetup();
+    }
+
     playPop();
 }
 
@@ -2669,7 +2673,10 @@ document.addEventListener('DOMContentLoaded', () => {
     loadState();
     loadRecurring();
 
-    if (state.setupComplete && state.budgetIncome > 0) {
+    const lastScene = localStorage.getItem('bb_last_scene');
+    if (lastScene && state.setupComplete && state.budgetIncome > 0) {
+        goto(lastScene);
+    } else if (state.setupComplete && state.budgetIncome > 0) {
         goto('tracker');
     } else {
         goto('welcome');

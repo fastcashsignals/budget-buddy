@@ -2490,6 +2490,31 @@ select, input[type="date"] {
     flex-shrink: 0;
 }
 
+.yearly-bill-actions .btn-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-width: 48px;
+    min-height: 44px;
+    padding: 4px 6px;
+    font-size: 12px;
+    opacity: 0.85;
+    background: var(--bg);
+    border: 1px solid var(--card);
+    border-radius: 10px;
+    transition: all 0.15s ease;
+    color: var(--text);
+}
+
+.yearly-bill-actions .btn-icon:hover {
+    opacity: 1;
+    background: var(--accent-light);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+
 .yearly-bill-progress {
     height: 6px;
     background: var(--bg);
@@ -2522,4 +2547,51 @@ select, input[type="date"] {
     background: var(--accent);
     color: white;
     border-color: var(--accent);
+}
+
+.yearly-bill-budget-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--bg);
+}
+
+.yearly-bill-budget-row .sub-item-dollar {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.yearly-bill-input {
+    width: 70px;
+    padding: 6px 8px;
+    font-size: 15px;
+    font-weight: 600;
+    background: var(--bg);
+    border: 1px solid var(--card);
+    border-radius: 8px;
+    color: var(--text);
+    text-align: right;
+}
+
+.yearly-bill-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+.yearly-bill-input-label {
+    font-size: 13px;
+    color: var(--text-light);
+}
+
+.yearly-bill-total-row {
+    padding: 14px 0 4px;
+    font-size: 15px;
+    color: var(--text);
+    text-align: right;
+    border-top: 2px solid var(--bg);
+    margin-top: 8px;
 }
