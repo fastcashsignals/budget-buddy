@@ -2500,12 +2500,18 @@ select, input[type="date"] {
     min-height: 44px;
     padding: 4px 6px;
     font-size: 12px;
-    opacity: 0.85;
-    background: var(--bg);
-    border: 1px solid var(--card);
+    opacity: 0.9;
+    background: var(--card);
+    border: 1px solid var(--text-light);
     border-radius: 10px;
     transition: all 0.15s ease;
     color: var(--text);
+}
+
+.yearly-bill-actions .btn-icon .btn-icon-emoji {
+    font-size: 18px;
+    line-height: 1;
+    filter: drop-shadow(0 0 2px rgba(255,255,255,0.3));
 }
 
 .yearly-bill-actions .btn-icon:hover {
@@ -2594,4 +2600,25 @@ select, input[type="date"] {
     text-align: right;
     border-top: 2px solid var(--bg);
     margin-top: 8px;
+}
+
+/* Merged Yearly Bills inside Budget Card */
+.yearly-bills-section {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 2px solid var(--bg);
+}
+
+.yearly-bills-header {
+    margin-bottom: 12px;
+}
+
+.yearly-bills-header h3 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    color: var(--text);
+}
+
+.yearly-bills-header .help-text {
+    margin: 0;
 }

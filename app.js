@@ -1654,10 +1654,10 @@ function getYearlyBillMonthlyAmount(bill) {
     const remaining = Math.max(0, bill.yearlyAmount - (bill.savedAmount || 0));
 
     if (bill.savingsMode === 'steady') {
-        return bill.yearlyAmount / 12;
+        return Math.round(bill.yearlyAmount / 12);
     }
     // Catch-up mode
-    return remaining / monthsLeft;
+    return Math.round(remaining / monthsLeft);
 }
 
 function getYearlyBillDaysUntil(bill) {
@@ -2674,9 +2674,10 @@ document.addEventListener('DOMContentLoaded', () => {
     loadRecurring();
 
     const lastScene = localStorage.getItem('bb_last_scene');
-    if (lastScene && state.setupComplete && state.budgetIncome > 0) {
+    const hasData = state.setupComplete || state.budgetIncome > 0 || state.transactions.length > 0;
+    if (lastScene && hasData) {
         goto(lastScene);
-    } else if (state.setupComplete && state.budgetIncome > 0) {
+    } else if (hasData) {
         goto('tracker');
     } else {
         goto('welcome');

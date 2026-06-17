@@ -249,20 +249,21 @@
             <div class="chat-bubble" id="budget-help-bubble">ℹ️ <strong>How to:</strong> Tap a category to expand it. Enter what you plan to spend on each item. Buck adds it all up. Hit <strong>Save Budget Plan</strong> when you're done!
             </div>
 
-            <div class="form-card">
+            <div class="form-card budget-categories-card">
                 <div id="budget-categories"></div>
+                
+                <!-- Yearly Bills merged into budget card -->
+                <div class="yearly-bills-section">
+                    <div class="yearly-bills-header">
+                        <h3>📅 Yearly Bills</h3>
+                        <p class="help-text">Subscription sinking fund — save monthly for annual bills</p>
+                    </div>
+                    <div id="yearly-bills-list"></div>
+                    <button class="btn-add" onclick="startNewYearlyBill()">+ Add Yearly Bill</button>
+                </div>
+                
                 <div id="budget-total-display"></div>
                 <button class="btn-primary" onclick="saveBudgetPlan()" style="margin-top:16px;">Save Budget Plan ✅</button>
-            </div>
-
-            <!-- Yearly Bills Section -->
-            <div class="form-card yearly-bills-card" id="yearly-bills-card">
-                <div class="form-header">
-                    <h3>📅 Yearly Bills</h3>
-                </div>
-                <p class="help-text">Subscription sinking fund — save monthly so you're ready when annual bills hit.</p>
-                <div id="yearly-bills-list"></div>
-                <button class="btn-add" onclick="startNewYearlyBill()">+ Add Yearly Bill</button>
             </div>
         </section>
 
