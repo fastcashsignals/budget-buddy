@@ -2622,3 +2622,13 @@ select, input[type="date"] {
 .yearly-bills-header .help-text {
     margin: 0;
 }
+
+/* Switch text label (Recurring / Repeat) */
+.switch-text {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-light);
+    text-transform: none;
+    letter-spacing: 0;
+    white-space: nowrap;
+}

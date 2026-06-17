@@ -687,6 +687,7 @@ function initBudgetSetup() {
                         <input type="checkbox" class="recurring-toggle" data-cat="${cat.id}" data-sub="${subName}" ${isRecurring ? 'checked' : ''}>
                         <span class="slider"></span>
                     </span>
+                    <span class="switch-text">Repeat</span>
                 </label>
             `;
             subList.appendChild(row);
@@ -713,6 +714,7 @@ function initBudgetSetup() {
                             <input type="checkbox" class="recurring-toggle" data-cat="${cat.id}" data-sub="${potKey}" ${isRecurring ? 'checked' : ''}>
                             <span class="slider"></span>
                         </span>
+                        <span class="switch-text">Repeat</span>
                     </label>
                 `;
                 subList.appendChild(row);
@@ -736,6 +738,7 @@ function initBudgetSetup() {
                             <input type="checkbox" class="recurring-toggle" data-cat="${cat.id}" data-sub="__custom__" ${isRecurring ? 'checked' : ''}>
                             <span class="slider"></span>
                         </span>
+                        <span class="switch-text">Repeat</span>
                     </label>
                     <button class="sub-item-remove" onclick="this.parentElement.remove();updateCatTotal('${cat.id}')">✕</button>
                 `;
@@ -762,6 +765,7 @@ function initBudgetSetup() {
                         <input type="checkbox" class="recurring-toggle" data-cat="${cat.id}" data-sub="__custom__">
                         <span class="slider"></span>
                     </span>
+                    <span class="switch-text">Repeat</span>
                 </label>
                 <button class="sub-item-remove" onclick="this.parentElement.remove();updateCatTotal('${cat.id}')">✕</button>
             `;
