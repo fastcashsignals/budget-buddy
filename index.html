@@ -476,6 +476,15 @@
                     <button class="btn-add" onclick="startNewPot()">+ Start a New Savings Goal</button>
                 </div>
 
+                <!-- Yearly Bills Card -->
+                <div class="card yearly-bills-card" id="yearly-bills-card">
+                    <div class="pot-header">
+                        <h3>📅 Yearly Bills</h3>
+                    </div>
+                    <div id="yearly-bills-list"></div>
+                    <button class="btn-add" onclick="startNewYearlyBill()">+ Add Yearly Bill</button>
+                </div>
+
                 <!-- Achievements -->
                 <div class="card achievements-card" id="achievements-card">
                     <h3>🏆 Achievements</h3>
@@ -554,6 +563,57 @@
             </div>
         </div>
     </div>
+
+        <!-- ADD YEARLY BILL MODAL -->
+        <div class="modal hidden" id="yearly-bill-modal">
+            <div class="modal-overlay" onclick="closeModal('yearly-bill-modal')"></div>
+            <div class="modal-content">
+                <h3 id="yearly-bill-modal-title">Add Yearly Bill</h3>
+                <input type="hidden" id="yearly-bill-id">
+
+                <label>Bill Name</label>
+                <input type="text" id="yearly-bill-name" class="text-input" placeholder="e.g. Amazon Prime">
+
+                <label>Yearly Cost</label>
+                <div class="money-input" style="margin-bottom:16px;">
+                    <span class="dollar">$</span>
+                    <input type="number" id="yearly-bill-amount" class="text-input" placeholder="0.00" min="0" step="0.01" style="margin-bottom:0;">
+                </div>
+
+                <label>Due Date</label>
+                <div style="display:flex;gap:8px;margin-bottom:16px;">
+                    <select id="yearly-bill-month" class="text-input" style="flex:2;margin-bottom:0;">
+                        <option value="0">January</option>
+                        <option value="1">February</option>
+                        <option value="2">March</option>
+                        <option value="3">April</option>
+                        <option value="4">May</option>
+                        <option value="5">June</option>
+                        <option value="6">July</option>
+                        <option value="7">August</option>
+                        <option value="8">September</option>
+                        <option value="9">October</option>
+                        <option value="10">November</option>
+                        <option value="11">December</option>
+                    </select>
+                    <input type="number" id="yearly-bill-day" class="text-input" placeholder="Day" min="1" max="31" style="flex:1;margin-bottom:0;">
+                </div>
+
+                <label>Savings Mode</label>
+                <div class="savings-mode-toggle" style="display:flex;gap:8px;margin-bottom:20px;">
+                    <button type="button" class="chip" id="mode-catchup" onclick="setYearlyBillMode('catchup')">Catch-up (pay off faster)</button>
+                    <button type="button" class="chip" id="mode-steady" onclick="setYearlyBillMode('steady')">Steady ($/12 every month)</button>
+                </div>
+                <input type="hidden" id="yearly-bill-mode" value="catchup">
+
+                <p class="help-text" id="yearly-bill-preview" style="text-align:center;padding:12px;background:var(--accent-light);border-radius:10px;margin-bottom:16px;"></p>
+
+                <div class="modal-actions">
+                    <button class="btn-secondary" onclick="closeModal('yearly-bill-modal')">Cancel</button>
+                    <button class="btn-primary" onclick="saveYearlyBill()">Save Bill</button>
+                </div>
+            </div>
+        </div>
 
     <!-- PRINTABLE REPORT (hidden until print) -->
     <div id="print-report" class="print-only">

@@ -1082,12 +1082,12 @@ label {
     flex-direction:column;
     align-items:center;
     justify-content:center;
-    gap:2px;
-    min-width:48px;
-    min-height:44px;
-    padding:4px 6px;
+    gap:3px;
+    min-width:52px;
+    min-height:48px;
+    padding:5px 6px;
     font-size:12px;
-    opacity:0.7;
+    opacity:0.85;
     background:var(--bg);
     border:1px solid var(--card);
     border-radius:10px;
@@ -1100,15 +1100,16 @@ label {
     transform:translateY(-1px);
 }
 .pot-name-row .btn-icon .btn-icon-emoji {
-    font-size:16px;
+    font-size:18px;
     line-height:1;
 }
 .pot-name-row .btn-icon .btn-icon-label {
-    font-size:9px;
+    font-size:10px;
     font-weight:600;
     color:var(--text-light);
     line-height:1;
     text-transform:capitalize;
+    letter-spacing:0.2px;
 }
 .pot-name-row .btn-icon:hover .btn-icon-label {
      color:var(--text);
@@ -2380,4 +2381,141 @@ select, input[type="date"] {
 @keyframes shadow {
     0%, 100% { transform: scaleX(1); opacity: 0.15; }
     50% { transform: scaleX(0.8); opacity: 0.1; }
+}
+
+/* ═══ YEARLY BILLS ═══ */
+.yearly-bills-card {
+    padding: 20px;
+}
+
+.yearly-bill-row {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--bg);
+}
+
+.yearly-bill-row:last-child {
+    border-bottom: none;
+}
+
+.yearly-bill-row.cancelling {
+    opacity: 0.6;
+}
+
+.yearly-bill-row.cancelling .yearly-bill-name {
+    text-decoration: line-through;
+}
+
+.yearly-bill-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.yearly-bill-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.yearly-bill-name {
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.yearly-bill-badge {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--danger);
+    background: var(--danger-light);
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.yearly-bill-meta {
+    font-size: 13px;
+    color: var(--text-light);
+    margin-bottom: 4px;
+    line-height: 1.5;
+}
+
+.yearly-bill-save {
+    font-size: 13px;
+    color: var(--text-light);
+}
+
+.yearly-bill-save strong {
+    color: var(--accent);
+    font-size: 15px;
+}
+
+.yearly-bill-reminder {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.yearly-bill-reminder.urgent {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
+.yearly-bill-reminder.warn {
+    background: var(--warn-light);
+    color: var(--warn);
+}
+
+.yearly-bill-reminder.info {
+    background: var(--info-light);
+    color: var(--info);
+}
+
+.yearly-bill-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.yearly-bill-progress {
+    height: 6px;
+    background: var(--bg);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.yearly-bill-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+
+.yearly-bills-cat {
+    border-left: 3px solid var(--accent);
+}
+
+.yearly-bills-cat .budget-cat-header {
+    background: var(--accent-light);
+}
+
+.savings-mode-toggle .chip {
+    flex: 1;
+    text-align: center;
+    justify-content: center;
+}
+
+.savings-mode-toggle .chip.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
 }

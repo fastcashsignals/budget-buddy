@@ -145,6 +145,9 @@ let state = {
     recurringIncome: 0,
     recurringIncomeSources: [],
 
+    // Yearly Bills (Subscription Sinking Fund)
+    yearlyBills: [],
+
     // Legacy (for migration)
     income: 0,
     incomeSources: [],
@@ -195,7 +198,8 @@ function saveGlobalState() {
     localStorage.setItem('budgetBuddy_global', JSON.stringify({
         savingsPots: state.savingsPots,
         badges: state.badges,
-        monthHistory: state.monthHistory
+        monthHistory: state.monthHistory,
+        yearlyBills: state.yearlyBills
     }));
 }
 
@@ -242,6 +246,7 @@ function loadState() {
     }
     state.badges = global.badges || state.badges;
     state.monthHistory = global.monthHistory || state.monthHistory;
+    state.yearlyBills = global.yearlyBills || [];
 
     if (saved) {
         try {
@@ -771,6 +776,65 @@ function initBudgetSetup() {
         container.appendChild(wrapper);
     });
 
+    // ═══ YEARLY BILLS SECTION ═══
+    const yearlyItems = getYearlyBillsBudgetItems();
+    if (yearlyItems.length > 0) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'budget-cat-wrap has-data yearly-bills-cat';
+        wrapper.dataset.cat = 'yearly_bills';
+
+        const total = yearlyItems.reduce((sum, item) => {
+            const savedSub = state.budgetSubItems['yearly_bills'] || {};
+            return sum + (savedSub[item.key] || item.amount);
+        }, 0);
+
+        const header = document.createElement('div');
+        header.className = 'budget-cat-header';
+        header.innerHTML = `
+            <div class="cat-icon">📅</div>
+            <div class="cat-info">
+                <div class="cat-name">Yearly Bills</div>
+                <div class="cat-desc">Subscription sinking fund — save monthly for annual bills</div>
+            </div>
+            <div class="budget-cat-total" id="cat-total-yearly_bills">$${formatMoney(total)}</div>
+            <div class="budget-cat-arrow">▼</div>
+        `;
+        header.onclick = () => toggleCatExpand(wrapper);
+
+        const body = document.createElement('div');
+        body.className = 'budget-cat-body open';
+        body.id = 'cat-body-yearly_bills';
+
+        const subList = document.createElement('div');
+        subList.className = 'sub-item-list';
+
+        yearlyItems.forEach(item => {
+            const savedSub = state.budgetSubItems['yearly_bills'] || {};
+            const val = savedSub[item.key] || item.amount;
+            const row = document.createElement('div');
+            row.className = 'sub-item-row pot-row';
+            row.innerHTML = `
+                <span class="sub-item-name" style="color:var(--accent);font-weight:600;">${item.key}</span>
+                <div class="sub-item-input-wrap">
+                    <span class="sub-item-dollar">$</span>
+                    <input type="number" class="sub-item-input" data-cat="yearly_bills" data-sub="${item.key}" placeholder="0" value="${val > 0 ? val : ''}" min="0" step="0.01">
+                </div>
+                <label class="switch-label" style="margin:0;flex-shrink:0;" title="Recurring every month">
+                    <span class="switch small">
+                        <input type="checkbox" class="recurring-toggle" data-cat="yearly_bills" data-sub="${item.key}" checked>
+                        <span class="slider"></span>
+                    </span>
+                </label>
+            `;
+            subList.appendChild(row);
+        });
+
+        body.appendChild(subList);
+        wrapper.appendChild(header);
+        wrapper.appendChild(body);
+        container.appendChild(wrapper);
+    }
+
     // Live total updater for all sub-item inputs
     container.querySelectorAll('.sub-item-input').forEach(input => {
         input.addEventListener('input', () => {
@@ -1046,7 +1110,20 @@ function saveBudgetPlan() {
     state.budgetSubItems = newSubItems;
     state.recurringBudget = newRecurring;
     state.setupComplete = true;
+
+    // Accumulate yearly bill savings
+    const yearlySubItems = newSubItems['yearly_bills'] || {};
+    state.yearlyBills.forEach(bill => {
+        if (bill.status !== 'active') return;
+        const key = `📅 ${bill.name}`;
+        const savedAmt = yearlySubItems[key] || 0;
+        if (savedAmt > 0) {
+            bill.savedAmount = (bill.savedAmount || 0) + savedAmt;
+        }
+    });
+
     saveState();
+    saveGlobalState();
     saveRecurring();
     playChaChing();
     fireConfetti();
@@ -1111,7 +1188,12 @@ function initTracker() {
     const mouth = document.getElementById('tracker-buck-mouth');
     const plannedBudget = getTotalBudgeted();
 
-    if (plannedBudget > totalIncome && totalIncome > 0) {
+    // Check yearly bill reminders first (most urgent takes priority)
+    const billReminder = checkYearlyBillReminders();
+    if (billReminder) {
+        bubble.textContent = billReminder.msg;
+        mouth.className = billReminder.level === 'urgent' ? 'mouth sad' : 'mouth';
+    } else if (plannedBudget > totalIncome && totalIncome > 0) {
         const overAmt = plannedBudget - totalIncome;
         bubble.textContent = `🚨 Your budget is $${formatMoney(overAmt)} OVER your total income. This plan is impossible before you spend a dime. Cut back or find more income.`;
         mouth.className = 'mouth sad';
@@ -1582,7 +1664,315 @@ function updateBuckVisuals(health) {
     }
 }
 
-// ─── DASHBOARD ───
+// ═══ YEARLY BILLS (Subscription Sinking Fund) ═══
+function getYearlyBillMonthlyAmount(bill) {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    const currentDay = now.getDate();
+
+    let targetYear = currentYear;
+    let targetMonth = bill.dueMonth;
+
+    // If due date has passed this year, target next year
+    if (targetMonth < currentMonth || (targetMonth === currentMonth && bill.dueDay < currentDay)) {
+        targetYear++;
+    }
+
+    const dueDate = new Date(targetYear, targetMonth, bill.dueDay);
+    const daysLeft = Math.max(1, Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24)));
+    const monthsLeft = Math.max(1, Math.ceil(daysLeft / 30));
+
+    const remaining = Math.max(0, bill.yearlyAmount - (bill.savedAmount || 0));
+
+    if (bill.savingsMode === 'steady') {
+        return bill.yearlyAmount / 12;
+    }
+    // Catch-up mode
+    return remaining / monthsLeft;
+}
+
+function getYearlyBillDaysUntil(bill) {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    let targetYear = currentYear;
+    let targetMonth = bill.dueMonth;
+
+    if (targetMonth < now.getMonth() || (targetMonth === now.getMonth() && bill.dueDay < now.getDate())) {
+        targetYear++;
+    }
+
+    const dueDate = new Date(targetYear, targetMonth, bill.dueDay);
+    return Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
+}
+
+function getYearlyBillReminder(bill) {
+    const daysLeft = getYearlyBillDaysUntil(bill);
+    const monthsLeft = Math.floor(daysLeft / 30);
+
+    if (daysLeft <= 0) return { level: 'urgent', msg: `🚨 ${bill.name} is due!` };
+    if (daysLeft <= 31) return { level: 'warn', msg: `⚠️ ${bill.name} due in ${daysLeft} days!` };
+    if (monthsLeft <= 3) return { level: 'info', msg: `⏰ ${bill.name} due in ${monthsLeft} month${monthsLeft > 1 ? 's' : ''}` };
+    return null;
+}
+
+function renderYearlyBills() {
+    const container = document.getElementById('yearly-bills-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (state.yearlyBills.length === 0) {
+        container.innerHTML = '<p class="help-text" style="text-align:center;padding:20px;">No yearly bills yet. Add one and Buck will help you save monthly!</p>';
+        return;
+    }
+
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    state.yearlyBills.forEach(bill => {
+        if (bill.status === 'cancelled') return;
+
+        const monthlyAmt = getYearlyBillMonthlyAmount(bill);
+        const saved = bill.savedAmount || 0;
+        const pct = Math.min(100, (saved / bill.yearlyAmount) * 100);
+        const daysLeft = getYearlyBillDaysUntil(bill);
+        const reminder = getYearlyBillReminder(bill);
+        const isCancelAfterTerm = bill.status === 'cancel_after_term';
+
+        const el = document.createElement('div');
+        el.className = 'yearly-bill-row' + (isCancelAfterTerm ? ' cancelling' : '');
+        el.innerHTML = `
+            <div class="yearly-bill-main">
+                <div class="yearly-bill-info">
+                    <div class="yearly-bill-name">
+                        ${escapeHtml(bill.name)}
+                        ${isCancelAfterTerm ? '<span class="yearly-bill-badge">Cancelling</span>' : ''}
+                    </div>
+                    <div class="yearly-bill-meta">
+                        $${formatMoney(saved)} saved / $${formatMoney(bill.yearlyAmount)} yearly
+                        · Due ${monthNames[bill.dueMonth]} ${bill.dueDay}
+                        ${reminder ? `<span class="yearly-bill-reminder ${reminder.level}">${reminder.msg}</span>` : ''}
+                    </div>
+                    <div class="yearly-bill-save">Save <strong>$${formatMoney(monthlyAmt)}</strong>/mo</div>
+                </div>
+                <div class="yearly-bill-actions">
+                    ${saved >= bill.yearlyAmount ? `<button class="btn-icon" onclick="markYearlyBillPaid('${bill.id}')" title="Mark Paid">
+                        <span class="btn-icon-emoji">💳</span><span class="btn-icon-label">Pay</span>
+                    </button>` : ''}
+                    <button class="btn-icon" onclick="editYearlyBill('${bill.id}')" title="Edit">
+                        <span class="btn-icon-emoji">✏️</span><span class="btn-icon-label">Edit</span>
+                    </button>
+                    ${!isCancelAfterTerm ? `<button class="btn-icon" onclick="toggleCancelYearlyBill('${bill.id}')" title="Cancel after term">
+                        <span class="btn-icon-emoji">🛑</span><span class="btn-icon-label">Cancel</span>
+                    </button>` : `<button class="btn-icon" onclick="toggleCancelYearlyBill('${bill.id}')" title="Reactivate">
+                        <span class="btn-icon-emoji">🔄</span><span class="btn-icon-label">Reactivate</span>
+                    </button>`}
+                    <button class="btn-icon" onclick="deleteYearlyBill('${bill.id}')" title="Delete">
+                        <span class="btn-icon-emoji">🗑️</span><span class="btn-icon-label">Delete</span>
+                    </button>
+                </div>
+            </div>
+            <div class="yearly-bill-progress">
+                <div class="yearly-bill-fill" style="width:${pct}%"></div>
+            </div>
+        `;
+        container.appendChild(el);
+    });
+}
+
+function startNewYearlyBill() {
+    document.getElementById('yearly-bill-modal-title').textContent = 'Add Yearly Bill';
+    document.getElementById('yearly-bill-id').value = '';
+    document.getElementById('yearly-bill-name').value = '';
+    document.getElementById('yearly-bill-amount').value = '';
+    document.getElementById('yearly-bill-month').value = new Date().getMonth().toString();
+    document.getElementById('yearly-bill-day').value = '1';
+    setYearlyBillMode('catchup');
+    updateYearlyBillPreview();
+    openModal('yearly-bill-modal');
+}
+
+function editYearlyBill(billId) {
+    const bill = state.yearlyBills.find(b => b.id === billId);
+    if (!bill) return;
+    document.getElementById('yearly-bill-modal-title').textContent = 'Edit Yearly Bill';
+    document.getElementById('yearly-bill-id').value = billId;
+    document.getElementById('yearly-bill-name').value = bill.name;
+    document.getElementById('yearly-bill-amount').value = bill.yearlyAmount;
+    document.getElementById('yearly-bill-month').value = bill.dueMonth.toString();
+    document.getElementById('yearly-bill-day').value = bill.dueDay;
+    setYearlyBillMode(bill.savingsMode || 'catchup');
+    updateYearlyBillPreview();
+    openModal('yearly-bill-modal');
+}
+
+function setYearlyBillMode(mode) {
+    document.getElementById('yearly-bill-mode').value = mode;
+    document.getElementById('mode-catchup').classList.toggle('active', mode === 'catchup');
+    document.getElementById('mode-steady').classList.toggle('active', mode === 'steady');
+    updateYearlyBillPreview();
+}
+
+function updateYearlyBillPreview() {
+    const amount = parseFloat(document.getElementById('yearly-bill-amount').value) || 0;
+    const month = parseInt(document.getElementById('yearly-bill-month').value) || 0;
+    const day = parseInt(document.getElementById('yearly-bill-day').value) || 1;
+    const mode = document.getElementById('yearly-bill-mode').value;
+
+    if (amount <= 0) {
+        document.getElementById('yearly-bill-preview').textContent = 'Enter an amount to see your monthly savings plan';
+        return;
+    }
+
+    const previewBill = {
+        yearlyAmount: amount,
+        dueMonth: month,
+        dueDay: day,
+        savingsMode: mode,
+        savedAmount: 0
+    };
+    const monthly = getYearlyBillMonthlyAmount(previewBill);
+    const modeText = mode === 'catchup' ? 'Catch-up mode' : 'Steady mode';
+    document.getElementById('yearly-bill-preview').innerHTML = `<strong>${modeText}:</strong> Save <strong>$${formatMoney(monthly)}</strong> per month`;
+}
+
+function saveYearlyBill() {
+    const id = document.getElementById('yearly-bill-id').value;
+    const name = document.getElementById('yearly-bill-name').value.trim();
+    const amount = parseFloat(document.getElementById('yearly-bill-amount').value) || 0;
+    const month = parseInt(document.getElementById('yearly-bill-month').value);
+    const day = parseInt(document.getElementById('yearly-bill-day').value) || 1;
+    const mode = document.getElementById('yearly-bill-mode').value;
+
+    if (!name) { shakeElement(document.getElementById('yearly-bill-name')); return; }
+    if (amount <= 0) { shakeElement(document.getElementById('yearly-bill-amount').parentElement); return; }
+
+    if (id) {
+        const bill = state.yearlyBills.find(b => b.id === id);
+        if (bill) {
+            bill.name = name;
+            bill.yearlyAmount = amount;
+            bill.dueMonth = month;
+            bill.dueDay = Math.min(day, 31);
+            bill.savingsMode = mode;
+        }
+    } else {
+        state.yearlyBills.push({
+            id: 'yb-' + Date.now(),
+            name,
+            yearlyAmount: amount,
+            dueMonth: month,
+            dueDay: Math.min(day, 31),
+            status: 'active',
+            savingsMode: mode,
+            savedAmount: 0,
+            history: [],
+            createdAt: new Date().toISOString()
+        });
+    }
+
+    saveGlobalState();
+    closeModal('yearly-bill-modal');
+    renderYearlyBills();
+    playPop();
+}
+
+function markYearlyBillPaid(billId) {
+    const bill = state.yearlyBills.find(b => b.id === billId);
+    if (!bill) return;
+
+    const saved = bill.savedAmount || 0;
+    const monthKey = getMonthKey(state.currentMonth);
+
+    // Log as a transaction in Tracker
+    state.transactions.push({
+        id: Date.now().toString(),
+        date: new Date().toISOString().split('T')[0],
+        category: 'subscriptions',
+        name: `${bill.name} (Yearly)`,
+        amount: Math.min(saved, bill.yearlyAmount)
+    });
+
+    // Record in bill history
+    bill.history.push({
+        month: monthKey,
+        amount: Math.min(saved, bill.yearlyAmount),
+        paid: true
+    });
+
+    // Reset saved amount for next year
+    bill.savedAmount = Math.max(0, saved - bill.yearlyAmount);
+    bill.lastPaidMonth = monthKey;
+
+    // If cancelling, mark as cancelled after this payment
+    if (bill.status === 'cancel_after_term') {
+        bill.status = 'cancelled';
+    }
+
+    saveState();
+    saveGlobalState();
+    renderYearlyBills();
+    initTracker();
+    playCoinSound();
+
+    // Buck celebration
+    const bubble = document.getElementById('tracker-bubble') || document.getElementById('status-message');
+    if (bubble) {
+        bubble.textContent = `🎉 ${bill.name} paid! Starting fresh for next year.`;
+        setTimeout(() => { if(bubble) bubble.textContent = 'Let\'s see how you\'re doing!'; }, 4000);
+    }
+}
+
+function toggleCancelYearlyBill(billId) {
+    const bill = state.yearlyBills.find(b => b.id === billId);
+    if (!bill) return;
+
+    if (bill.status === 'active') {
+        if (!confirm(`Cancel "${bill.name}" after the current term ends? It will stop appearing in your budget.`)) return;
+        bill.status = 'cancel_after_term';
+    } else if (bill.status === 'cancel_after_term') {
+        bill.status = 'active';
+    }
+
+    saveGlobalState();
+    renderYearlyBills();
+}
+
+function deleteYearlyBill(billId) {
+    if (!confirm('Delete this yearly bill? The savings history will be lost.')) return;
+    state.yearlyBills = state.yearlyBills.filter(b => b.id !== billId);
+    saveGlobalState();
+    renderYearlyBills();
+}
+
+function checkYearlyBillReminders() {
+    const reminders = state.yearlyBills
+        .filter(b => b.status === 'active')
+        .map(getYearlyBillReminder)
+        .filter(r => r !== null);
+
+    if (reminders.length === 0) return null;
+
+    // Return the most urgent reminder
+    const priority = { urgent: 3, warn: 2, info: 1 };
+    reminders.sort((a, b) => priority[b.level] - priority[a.level]);
+    return reminders[0];
+}
+
+// Hook into budget setup to show yearly bills as a dynamic category
+function getYearlyBillsBudgetItems() {
+    return state.yearlyBills
+        .filter(b => b.status === 'active')
+        .map(bill => {
+            const monthly = getYearlyBillMonthlyAmount(bill);
+            return {
+                key: `📅 ${bill.name}`,
+                amount: monthly,
+                billId: bill.id
+            };
+        });
+}
+
+// ═══ DASHBOARD ═══
 function renderDashboard() {
     updateMonthSelector();
 
@@ -1610,7 +2000,14 @@ function renderDashboard() {
     const statusHeadline = document.getElementById('status-headline');
     const statusMessage = document.getElementById('status-message');
 
-    if (health >= 80) {
+    // Check yearly bill reminders
+    const billReminder = checkYearlyBillReminders();
+
+    if (billReminder) {
+        mouth.className = billReminder.level === 'urgent' ? 'mouth sad' : 'mouth';
+        statusHeadline.textContent = billReminder.msg;
+        statusMessage.textContent = 'Check your Yearly Bills on the Dashboard for details.';
+    } else if (health >= 80) {
         mouth.className = 'mouth happy';
         statusHeadline.textContent = pickRandom(BUCK_SAYINGS.thriving);
         statusMessage.textContent = `Budget health at ${health}%. You're crushing this month!`;
@@ -1662,6 +2059,9 @@ function renderDashboard() {
 
     // Savings Pot
     renderSavingsPots();
+
+    // Yearly Bills
+    renderYearlyBills();
 
     // Breakdown (budget vs actual)
     renderBreakdown();
@@ -2283,6 +2683,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Enter') addTransaction();
         });
     }
+
+    // Yearly bill modal: live preview updates
+    const ybAmount = document.getElementById('yearly-bill-amount');
+    const ybMonth = document.getElementById('yearly-bill-month');
+    const ybDay = document.getElementById('yearly-bill-day');
+    if (ybAmount) ybAmount.addEventListener('input', updateYearlyBillPreview);
+    if (ybMonth) ybMonth.addEventListener('change', updateYearlyBillPreview);
+    if (ybDay) ybDay.addEventListener('input', updateYearlyBillPreview);
     if (trackerName) {
         trackerName.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') addTransaction();
