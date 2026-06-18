@@ -2575,6 +2575,9 @@ function newMonth() {
 }
 
 function confirmNewMonth() {
+    // Close modal immediately so user isn't stuck staring at it
+    closeModal('new-month-modal');
+
     const totalActual = getTotalActual();
     const totalExtra = getTotalExtraIncome();
     const totalIncome = state.budgetIncome + totalExtra;
@@ -2613,7 +2616,6 @@ function confirmNewMonth() {
     // Switch to next month (this will pre-fill recurring items)
     switchMonth(nextKey);
 
-    closeModal('new-month-modal');
     playChaChing();
     goto('tracker');
 }
