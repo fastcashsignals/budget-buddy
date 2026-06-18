@@ -388,17 +388,6 @@
                 </div>
             </div>
 
-            <!-- Calendar -->
-            <div class="card tracker-calendar-card">
-                <div class="calendar-header">
-                    <button class="calendar-nav" onclick="changeCalendarMonth(-1)" title="Previous month">‹</button>
-                    <h3 id="calendar-month-label">June 2026</h3>
-                    <button class="calendar-nav" onclick="changeCalendarMonth(1)" title="Next month">›</button>
-                </div>
-                <div class="calendar-grid" id="calendar-grid"></div>
-                <p class="help-text" style="margin:8px 0 0 0;text-align:center;">Tap a day to log purchases for that date.</p>
-            </div>
-
             <!-- Quick Add -->
             <div class="card tracker-quick-add">
                 <h3>🔫 Log a Purchase</h3>
@@ -407,7 +396,7 @@
                         <select id="tracker-cat-select" class="tracker-select" style="margin-bottom:0;flex:2;-webkit-appearance:none;-moz-appearance:none;appearance:none;background:var(--card);">
                             <option value="">Pick a category...</option>
                         </select>
-                        <input type="date" id="tracker-date" class="tracker-date" style="flex:1;-webkit-appearance:none;-moz-appearance:none;appearance:none;background:var(--card);" onchange="onDateInputChange()">
+                        <input type="date" id="tracker-date" class="tracker-date" style="flex:1;-webkit-appearance:none;-moz-appearance:none;appearance:none;background:var(--card);">
                     </div>
                     <div class="tracker-input-row">
                         <div class="money-input" style="margin-bottom:0;flex:1;">
