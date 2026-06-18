@@ -2675,3 +2675,49 @@ select, input[type="date"] {
     letter-spacing: 0;
     white-space: nowrap;
 }
+
+/* ═══ ROLLOVER LEFTOVERS ═══ */
+.rollover-card {
+    padding: 20px;
+}
+
+.rollover-list {
+    margin-top: 12px;
+}
+
+.rollover-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--bg);
+}
+
+.rollover-row:last-child {
+    border-bottom: none;
+}
+
+.rollover-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.rollover-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text);
+    margin-bottom: 2px;
+}
+
+.rollover-detail {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+.rollover-btn {
+    flex-shrink: 0;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+}

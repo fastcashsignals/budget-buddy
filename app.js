@@ -119,6 +119,9 @@ let state = {
     // Extra income for this month
     extraIncome: [],  // { id, date, name, amount }
 
+    // Rollovers from previous month (already applied to this month's budget)
+    rolledOverCategories: [], // [catId, catId, ...]
+
     // Goals
     goals: {},
 
@@ -259,6 +262,7 @@ function loadState() {
             state.transactions = parsed.transactions || [];
             state.extraIncome = parsed.extraIncome || [];
             state.goals = parsed.goals || {};
+            state.rolledOverCategories = parsed.rolledOverCategories || [];
             state.setupComplete = parsed.setupComplete || false;
             state.income = parsed.income || 0;
             state.incomeSources = parsed.incomeSources || [];
@@ -281,6 +285,7 @@ function saveState() {
         transactions: state.transactions,
         extraIncome: state.extraIncome,
         goals: state.goals,
+        rolledOverCategories: state.rolledOverCategories,
         setupComplete: state.setupComplete,
         income: state.income,
         incomeSources: state.incomeSources,
@@ -289,6 +294,31 @@ function saveState() {
     localStorage.setItem('budgetBuddy_' + monthKey, JSON.stringify(monthData));
     // Save global data
     saveGlobalState();
+}
+
+function getMonthState(monthKey) {
+    const saved = localStorage.getItem('budgetBuddy_' + monthKey);
+    if (saved) {
+        try {
+            return JSON.parse(saved);
+        } catch (e) { console.error('bad month state', e); }
+    }
+    return null;
+}
+
+function setMonthState(monthKey, data) {
+    localStorage.setItem('budgetBuddy_' + monthKey, JSON.stringify(data));
+}
+
+function getNextMonthKey(monthKey) {
+    const [year, month] = monthKey.split('-').map(Number);
+    let nextMonth = month + 1;
+    let nextYear = year;
+    if (nextMonth > 12) {
+        nextMonth = 1;
+        nextYear++;
+    }
+    return nextYear + '-' + String(nextMonth).padStart(2, '0');
 }
 
 function switchMonth(monthKey) {
@@ -331,6 +361,7 @@ function switchMonth(monthKey) {
             state.transactions = parsed.transactions || [];
             state.extraIncome = parsed.extraIncome || [];
             state.goals = parsed.goals || {};
+            state.rolledOverCategories = parsed.rolledOverCategories || [];
             state.setupComplete = parsed.setupComplete || false;
         } catch (e) {}
     } else {
@@ -2019,6 +2050,92 @@ function getYearlyBillsBudgetItems() {
         });
 }
 
+function rollOverCategory(catId) {
+    const budgeted = state.budgetCategories[catId] || 0;
+    const actual = getCategoryActual(catId);
+    const leftover = Math.max(0, budgeted - actual);
+    if (leftover <= 0) return;
+
+    const currentKey = getMonthKey(state.currentMonth);
+    const nextKey = getNextMonthKey(currentKey);
+
+    // Load next month's state (or start fresh)
+    let nextState = getMonthState(nextKey);
+    if (!nextState) {
+        nextState = {
+            budgetIncome: state.recurringIncome || 0,
+            budgetIncomeSources: [...(state.recurringIncomeSources || [])],
+            budgetCategories: {},
+            budgetSubItems: {},
+            transactions: [],
+            extraIncome: [],
+            goals: {},
+            rolledOverCategories: [],
+            setupComplete: false,
+            income: state.recurringIncome || 0,
+            incomeSources: [],
+            expenses: {}
+        };
+        // Pre-fill recurring budget
+        for (const [cid, subs] of Object.entries(state.recurringBudget || {})) {
+            nextState.budgetSubItems[cid] = {};
+            let catTotal = 0;
+            for (const [subName, amount] of Object.entries(subs)) {
+                if (amount > 0) {
+                    nextState.budgetSubItems[cid][subName] = amount;
+                    catTotal += amount;
+                }
+            }
+            nextState.budgetCategories[cid] = catTotal;
+        }
+    }
+
+    // Add leftover to next month's category budget
+    nextState.budgetCategories[catId] = (nextState.budgetCategories[catId] || 0) + leftover;
+
+    // Mark current category as rolled over
+    if (!state.rolledOverCategories.includes(catId)) {
+        state.rolledOverCategories.push(catId);
+    }
+
+    setMonthState(nextKey, nextState);
+    saveState();
+    renderDashboard();
+    playPop();
+}
+
+function renderRollovers() {
+    const list = document.getElementById('rollover-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    const candidates = CATEGORIES.map(cat => {
+        const budgeted = state.budgetCategories[cat.id] || 0;
+        const actual = getCategoryActual(cat.id);
+        const leftover = budgeted - actual;
+        return { cat, budgeted, actual, leftover };
+    }).filter(c => c.budgeted > 0 && c.leftover > 0 && !state.rolledOverCategories.includes(c.cat.id))
+      .sort((a, b) => b.leftover - a.leftover);
+
+    if (candidates.length === 0) {
+        list.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:16px 0;margin:0;">No leftover money to roll over this month.</p>';
+        return;
+    }
+
+    candidates.forEach(({ cat, budgeted, actual, leftover }) => {
+        const row = document.createElement('div');
+        row.className = 'rollover-row';
+        row.innerHTML = `
+            <div class="rollover-info">
+                <div class="rollover-name">${cat.icon} ${cat.name}</div>
+                <div class="rollover-detail">Budgeted $${formatWhole(budgeted)} · Spent $${formatWhole(actual)} · Left <strong>$${formatWhole(leftover)}</strong></div>
+            </div>
+            <button class="btn-secondary rollover-btn" onclick="rollOverCategory('${cat.id}')">Roll Over</button>
+        `;
+        list.appendChild(row);
+    });
+}
+
 // ═══ DASHBOARD ═══
 function renderDashboard() {
     updateMonthSelector();
@@ -2106,6 +2223,9 @@ function renderDashboard() {
 
     // Savings Pot
     renderSavingsPots();
+
+    // Rollovers
+    renderRollovers();
 
     // Breakdown (budget vs actual)
     renderBreakdown();
