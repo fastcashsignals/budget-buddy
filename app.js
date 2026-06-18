@@ -1039,17 +1039,22 @@ function saveBudgetPlan() {
     const newSubItems = {};
     const newRecurring = {};
 
-    document.querySelectorAll('.budget-cat-wrap').forEach(wrap => {
+    const wraps = document.querySelectorAll('.budget-cat-wrap');
+    console.log('[saveBudgetPlan] found', wraps.length, 'budget-cat-wrap elements');
+    wraps.forEach(wrap => {
         const catId = wrap.dataset.cat;
         let catTotal = 0;
         const catSubs = {};
+        const rows = wrap.querySelectorAll('.sub-item-row');
+        console.log('[saveBudgetPlan] cat', catId, 'has', rows.length, 'rows');
 
-        wrap.querySelectorAll('.sub-item-row').forEach(row => {
+        rows.forEach(row => {
             const customName = row.querySelector('.sub-item-custom-name');
             const input = row.querySelector('.sub-item-input');
             const recurringToggle = row.querySelector('.recurring-toggle');
             const name = customName ? (customName.value.trim() || 'Other') : input.dataset.sub;
             const val = parseFloat(input.value) || 0;
+            console.log('[saveBudgetPlan] row', name, 'input value:', input?.value, 'parsed:', val);
             if (val > 0) {
                 catTotal += val;
                 catSubs[name] = val;
