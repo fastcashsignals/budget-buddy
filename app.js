@@ -597,6 +597,12 @@ function initIncome() {
 
 // ——— BUDGET SETUP ———
 function initBudgetSetup() {
+    console.log('[initBudgetSetup] starting. state:', {
+        currentMonth: state.currentMonth,
+        budgetIncome: state.budgetIncome,
+        budgetCategories: {...state.budgetCategories},
+        budgetSubItems: JSON.parse(JSON.stringify(state.budgetSubItems))
+    });
     const container = document.getElementById('budget-categories');
     if (!container) return;
     container.innerHTML = '';
@@ -605,13 +611,15 @@ function initBudgetSetup() {
     const incomeInput = document.getElementById('budget-income-input');
     if (incomeInput) {
         incomeInput.value = state.budgetIncome > 0 ? state.budgetIncome : '';
-        incomeInput.addEventListener('input', () => {
-            const val = parseFloat(incomeInput.value) || 0;
+        // Remove old listener to avoid duplicates
+        const newInput = incomeInput.cloneNode(true);
+        incomeInput.parentNode.replaceChild(newInput, incomeInput);
+        newInput.addEventListener('input', () => {
+            const val = parseFloat(newInput.value) || 0;
             state.budgetIncome = val;
             state.income = val;
             updateBudgetTotal();
             updateBudgetBuck();
-            // Update display
             const display = document.getElementById('budget-income-display');
             if (display) display.textContent = '$' + formatMoney(val);
         });
@@ -998,6 +1006,13 @@ function updateBudgetTotal() {
 
 
 function saveBudgetPlan() {
+    console.log('[saveBudgetPlan] starting. current state:', {
+        budgetIncome: state.budgetIncome,
+        budgetCategories: {...state.budgetCategories},
+        budgetSubItems: JSON.parse(JSON.stringify(state.budgetSubItems)),
+        currentMonth: state.currentMonth
+    });
+
     // Save income from budget page
     const incomeInput = document.getElementById('budget-income-input');
     const incomeVal = parseFloat(incomeInput?.value) || 0;
@@ -1013,7 +1028,6 @@ function saveBudgetPlan() {
         state.recurringIncomeSources = [...state.budgetIncomeSources];
         saveRecurring();
     } else if (incomeRecurringToggle && !incomeRecurringToggle.checked) {
-        // If unchecked, clear recurring income if it matches current
         if (state.recurringIncome === incomeVal) {
             state.recurringIncome = 0;
             state.recurringIncomeSources = [];
@@ -1023,7 +1037,7 @@ function saveBudgetPlan() {
 
     const newBudget = {};
     const newSubItems = {};
-    const newRecurring = {}; // Build new recurring template
+    const newRecurring = {};
 
     document.querySelectorAll('.budget-cat-wrap').forEach(wrap => {
         const catId = wrap.dataset.cat;
@@ -1040,7 +1054,6 @@ function saveBudgetPlan() {
                 catTotal += val;
                 catSubs[name] = val;
             }
-            // Update recurring template based on toggle
             if (recurringToggle && recurringToggle.checked && val > 0) {
                 if (!newRecurring[catId]) newRecurring[catId] = {};
                 newRecurring[catId][name] = val;
@@ -1053,7 +1066,9 @@ function saveBudgetPlan() {
         }
     });
 
-    // Collect yearly bill inputs from the standalone card
+    console.log('[saveBudgetPlan] collected categories:', newBudget, newSubItems);
+
+    // Collect yearly bill inputs
     const yearlyBillSubs = {};
     let yearlyBillTotal = 0;
     document.querySelectorAll('.yearly-bill-input').forEach(input => {
@@ -1073,6 +1088,7 @@ function saveBudgetPlan() {
     }
 
     const totalBudgeted = Object.values(newBudget).reduce((a, b) => a + b, 0);
+    console.log('[saveBudgetPlan] totalBudgeted:', totalBudgeted);
     if (totalBudgeted === 0) {
         shakeElement(document.getElementById('budget-categories'));
         return;
@@ -1092,6 +1108,11 @@ function saveBudgetPlan() {
         if (savedAmt > 0) {
             bill.savedAmount = (bill.savedAmount || 0) + savedAmt;
         }
+    });
+
+    console.log('[saveBudgetPlan] final state to save:', {
+        budgetCategories: {...state.budgetCategories},
+        budgetSubItems: JSON.parse(JSON.stringify(state.budgetSubItems))
     });
 
     saveState();
@@ -2712,4 +2733,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Enter') addTransaction();
         });
     }
+
+    // Re-init current scene when restored from bfcache so stale forms don't show
+    window.addEventListener('pageshow', (event) => {
+        if (event.persisted) {
+            const lastScene = localStorage.getItem('bb_last_scene') || 'tracker';
+            console.log('[pageshow] restored from bfcache, re-init scene:', lastScene);
+            if (lastScene === 'income') initIncome();
+            if (lastScene === 'budget-setup') initBudgetSetup();
+            if (lastScene === 'tracker') initTracker();
+            if (lastScene === 'dashboard') renderDashboard();
+        }
+    });
 });
