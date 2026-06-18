@@ -2320,12 +2320,32 @@ function renderBreakdown() {
     }).filter(c => c.budgeted > 0 || c.actual > 0)
       .sort((a, b) => b.actual - a.actual);
 
-    const maxVal = Math.max(...catData.map(c => c.actual), 1);
+    if (catData.length === 0) {
+        breakdownList.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:20px;">Set up your budget to see the breakdown!</p>';
+        return;
+    }
 
     catData.forEach(({ cat, budgeted, actual }) => {
-        const pct = (actual / maxVal) * 100;
-        const budgetPct = budgeted > 0 ? Math.min(100, (actual / budgeted) * 100) : 0;
-        const over = actual > budgeted && budgeted > 0;
+        const diff = actual - budgeted;
+        const isOver = diff > 0;
+        const pctOfBudget = budgeted > 0 ? Math.min(100, (actual / budgeted) * 100) : 0;
+        const overPct = budgeted > 0 && isOver ? Math.min(100, (diff / budgeted) * 100) : 0;
+
+        let statusText = '';
+        let statusClass = '';
+        if (budgeted === 0) {
+            statusText = `$${formatWhole(actual)} spent (no budget)`;
+            statusClass = 'neutral';
+        } else if (isOver) {
+            statusText = `$${formatWhole(actual)} spent · $${formatWhole(diff)} over budget`;
+            statusClass = 'over';
+        } else if (diff === 0) {
+            statusText = `$${formatWhole(actual)} spent · right on budget`;
+            statusClass = 'on';
+        } else {
+            statusText = `$${formatWhole(actual)} spent · $${formatWhole(Math.abs(diff))} under budget`;
+            statusClass = 'under';
+        }
 
         const row = document.createElement('div');
         row.className = 'breakdown-item';
@@ -2333,25 +2353,15 @@ function renderBreakdown() {
             <div class="breakdown-icon" style="background:${getCatColor(cat.id)}">${cat.icon}</div>
             <div class="breakdown-info">
                 <div class="breakdown-name">${cat.name}</div>
-                <div class="breakdown-bar-bg">
-                    <div class="breakdown-bar-fill" style="width:${pct}%;background:${getCatColor(cat.id)}"></div>
+                <div class="breakdown-single-bar">
+                    <div class="breakdown-fill" style="width:${pctOfBudget}%;background:${getCatColor(cat.id)}"></div>
+                    ${isOver ? `<div class="breakdown-over" style="width:${overPct}%;background:var(--danger)"></div>` : ''}
                 </div>
-                ${budgeted > 0 ? `
-                <div class="goal-progress">
-                    <div class="goal-track">
-                        <div class="goal-track-fill" style="width:${Math.min(100, budgetPct)}%;background:${over ? 'var(--danger)' : budgetPct > 80 ? 'var(--warn)' : 'var(--info)'}"></div>
-                    </div>
-                    <span class="goal-label">$${formatMoney(actual)} / $${formatMoney(budgeted)} ${over ? 'OVER' : budgetPct > 80 ? 'Close!' : 'On track'}</span>
-                </div>` : ''}
+                <div class="breakdown-status ${statusClass}">${statusText}</div>
             </div>
-            <div class="breakdown-amount">$${formatMoney(actual)}</div>
         `;
         breakdownList.appendChild(row);
     });
-
-    if (catData.length === 0) {
-        breakdownList.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:20px;">Set up your budget to see the breakdown!</p>';
-    }
 }
 
 // ─── BADGES ───

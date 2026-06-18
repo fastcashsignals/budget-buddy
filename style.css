@@ -1347,54 +1347,40 @@ label {
 
 .breakdown-info { flex:1; }
 .breakdown-name { font-weight:600; font-size:14px; }
-.breakdown-bar-bg {
-    height:8px;
-    background:#e2e8f0;
-    border-radius:4px;
-    margin-top:4px;
-    overflow:hidden;
+
+/* Single bar: fills up to budget, red overflow if over */
+.breakdown-single-bar {
+    height: 10px;
+    background: var(--bg);
+    border-radius: 5px;
+    margin-top: 6px;
+    overflow: hidden;
+    display: flex;
+    align-items: stretch;
 }
-.breakdown-bar-fill {
-    height:100%;
-    border-radius:4px;
-    background:var(--accent);
-    transition:width 0.5s ease;
+.breakdown-fill {
+    height: 100%;
+    border-radius: 5px 0 0 5px;
+    transition: width 0.5s ease;
+    flex-shrink: 0;
 }
-.breakdown-amount {
-    font-weight:700;
-    font-size:14px;
-    text-align:right;
-    min-width:70px;
+.breakdown-over {
+    height: 100%;
+    border-radius: 0 5px 5px 0;
+    transition: width 0.5s ease;
+    flex-shrink: 0;
 }
 
-/* Goal progress in breakdown */
-.goal-progress {
-    display:flex;
-    align-items:center;
-    gap:6px;
-    margin-top:2px;
+/* Status text under the bar */
+.breakdown-status {
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 4px;
 }
-
-.goal-progress .goal-track {
-    flex:1;
-    height:4px;
-    background:#e2e8f0;
-    border-radius:2px;
-    overflow:hidden;
-}
-
-.goal-progress .goal-track-fill {
-    height:100%;
-    background:var(--info);
-    border-radius:2px;
-    transition:width 0.5s ease;
-}
-
-.goal-progress .goal-label {
-    font-size:11px;
-    color:var(--text-light);
-    font-weight:600;
-}
+.breakdown-status.under { color: var(--accent); }
+.breakdown-status.on    { color: var(--info); }
+.breakdown-status.over  { color: var(--danger); }
+.breakdown-status.neutral { color: var(--text-light); }
 
 /* Wizard nav */
 .wizard-nav { margin-top:20px; }
@@ -1614,8 +1600,7 @@ label {
 }
 [data-theme="dark"] .water-depth { background:#334155 !important; }
 [data-theme="dark"] .hunger-bar { background:#334155 !important; }
-[data-theme="dark"] .breakdown-bar-bg,
-[data-theme="dark"] .goal-track { background:#334155 !important; }
+[data-theme="dark"] .breakdown-single-bar { background: #334155 !important; }
 [data-theme="dark"] .pot-jar { background:#0f172a !important; border-color:#334155 !important; }
 [data-theme="dark"] .badge-icon { background:#0f172a !important; }
 [data-theme="dark"] .switch .slider { background:#334155 !important; }
