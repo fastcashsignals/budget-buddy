@@ -266,6 +266,15 @@
                 <div id="budget-total-display"></div>
                 <button class="btn-primary" onclick="saveBudgetPlan()" style="margin-top:16px;">Save Budget Plan ✅</button>
             </div>
+
+            <!-- Savings Goals -->
+            <div class="card savings-pot-card" id="budget-savings-pot-card">
+                <div class="pot-header">
+                    <h3>💰 Savings Goals</h3>
+                </div>
+                <div id="budget-savings-pots-list"></div>
+                <button class="btn-add" onclick="startNewPot()">+ Start a New Savings Goal</button>
+            </div>
         </section>
 
         <!-- DAILY TRACKER (Main Screen) -->
@@ -486,12 +495,6 @@
                     </div>
                     <div id="savings-pots-list"></div>
                     <button class="btn-add" onclick="startNewPot()">+ Start a New Savings Goal</button>
-                </div>
-
-                <!-- Achievements -->
-                <div class="card achievements-card" id="achievements-card">
-                    <h3>🏆 Achievements</h3>
-                    <div class="badges-row" id="badges-row"></div>
                 </div>
 
                 <!-- Water Status -->

@@ -839,8 +839,9 @@ function initBudgetSetup() {
         bubble.textContent = `You've budgeted ${filled} of ${CATEGORIES.length} categories. Tap any to edit the breakdown.`;
     }
 
-    // Render yearly bills on budget page
+    // Render yearly bills and savings goals on budget page
     renderYearlyBills();
+    renderSavingsPots();
 }
 
 function updateBudgetBuck() {
@@ -1232,9 +1233,14 @@ function initTracker() {
     if (billReminder) {
         bubble.textContent = billReminder.msg;
         mouth.className = billReminder.level === 'urgent' ? 'mouth sad' : 'mouth';
+    } else if (totalActual > totalIncome && totalIncome > 0) {
+        // Actual spending has already exceeded income — this is the real problem
+        const overAmt = totalActual - totalIncome;
+        bubble.textContent = `🚨 You've spent $${formatMoney(overAmt)} more than your income. You're $${formatMoney(overAmt)} in the hole.`;
+        mouth.className = 'mouth sad';
     } else if (plannedBudget > totalIncome && totalIncome > 0) {
         const overAmt = plannedBudget - totalIncome;
-        bubble.textContent = `🚨 Your budget is $${formatMoney(overAmt)} OVER your total income. This plan is impossible before you spend a dime. Cut back or find more income.`;
+        bubble.textContent = `🚨 Your budget plan is $${formatMoney(overAmt)} over your income. Cut back or find more income before you spend a dime.`;
         mouth.className = 'mouth sad';
     } else if (health >= 80) {
         bubble.textContent = pickRandom(BUCK_SAYINGS.thriving);
@@ -1644,52 +1650,52 @@ function getBuckHealth() {
     const totalExtra = getTotalExtraIncome();
     const income = state.budgetIncome + totalExtra;
 
-    // ❌ CRITICAL: If budget plan itself exceeds income, that's immediately bad
-    // No amount of "not spending yet" can save you from math
-    if (totalBudget > income && income > 0) {
-        const overPct = (totalBudget - income) / income;
-        // Over by 10% = 50 health, over by 50% = 15 health, over by 100%+ = 5 health
-        let planHealth = Math.max(5, Math.round(60 - overPct * 80));
-        return planHealth;
-    }
-
-    // If no budget set but we have income, use income as the baseline
-    const baseline = totalBudget > 0 ? totalBudget : (income > 0 ? income : 1);
+    // If no income or no baseline, neutral
+    if (income <= 0) return 50;
 
     const today = new Date().getDate();
     const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
-    const timeProgress = Math.max(0.05, today / daysInMonth); // min 5% so day 1 isn't 0
-
-    // Expected spend by now (linear)
-    const expectedSpend = baseline * timeProgress;
-    const diff = totalActual - expectedSpend;
+    const timeProgress = Math.max(0.05, today / daysInMonth);
 
     let health = 100;
 
-    // Lose health for overspending pace
-    if (diff > 0) {
+    // Start with pacing health (based on actual spending vs budget pace)
+    const baseline = totalBudget > 0 ? totalBudget : income;
+    const expectedSpend = baseline * timeProgress;
+    const paceDiff = totalActual - expectedSpend;
+
+    if (paceDiff > 0) {
         const dailyBudget = baseline / daysInMonth;
-        const daysOver = diff / dailyBudget;
+        const daysOver = paceDiff / dailyBudget;
         health -= daysOver * 12;
     } else {
-        // Underspending = small bonus
         health = Math.min(100, health + 5);
     }
 
-    // If over total budget (or income if no budget), cap
-    if (totalActual > baseline) {
+    // If actual spending has blown past income, that's critical
+    if (totalActual > income) {
+        const overPct = (totalActual - income) / income;
+        // Over by 10% income -> 25 health, over by 50% -> 5 health
+        const actualHealth = Math.max(5, Math.round(35 - overPct * 60));
+        health = Math.min(health, actualHealth);
+    }
+
+    // If actual spending has blown past total budget, also bad
+    if (totalActual > totalBudget && totalBudget > 0) {
         health = Math.min(health, 35);
     }
 
-    // If over income, critical
-    if (totalActual > income && income > 0) {
-        health = Math.min(health, 10);
+    // If the planned budget itself exceeds income, cap health low
+    if (totalBudget > income) {
+        const overPct = (totalBudget - income) / income;
+        const planHealth = Math.max(5, Math.round(50 - overPct * 80));
+        health = Math.min(health, planHealth);
     }
 
-    // If we have money left and spending is under income, ensure health is decent
+    // If still in the green, floor at 50 so "healthy" isn't too pessimistic
     const left = income - totalActual;
     if (left > 0 && totalActual < income) {
-        health = Math.max(health, 50); // at least decent if still in the green
+        health = Math.max(health, 50);
     }
 
     return Math.max(0, Math.round(health));
@@ -2236,12 +2242,15 @@ function renderDashboard() {
 }
 
 function renderSavingsPots() {
-    const container = document.getElementById('savings-pots-list');
-    if (!container) return;
-    container.innerHTML = '';
+    const containers = [
+        document.getElementById('savings-pots-list'),
+        document.getElementById('budget-savings-pots-list')
+    ].filter(Boolean);
+
+    if (containers.length === 0) return;
 
     if (state.savingsPots.length === 0) {
-        container.innerHTML = '<p class="help-text">No savings goals yet. Start one below!</p>';
+        containers.forEach(c => c.innerHTML = '<p class="help-text">No savings goals yet. Start one below!</p>');
         return;
     }
 
@@ -2288,19 +2297,21 @@ function renderSavingsPots() {
                 <p class="pot-desc">${monthlySavings > 0 ? `+$${formatMoney(monthlySavings)} this month — ` : ''}Goal: $${formatMoney(goalAmount)}</p>
             </div>
         `;
-        container.appendChild(potEl);
+        containers.forEach(container => container.appendChild(potEl.cloneNode(true)));
 
-        // Coin animation for pots with monthly savings
-        if (monthlySavings > 0) {
-            const coinsContainer = potEl.querySelector(`#pot-coins-${pot.id}`);
-            for (let i = 0; i < Math.min(5, Math.floor(monthlySavings / 50) + 1); i++) {
-                const coin = document.createElement('div');
-                coin.className = 'pot-coin';
-                coin.style.left = (10 + Math.random() * 60) + '%';
-                coin.style.bottom = (Math.random() * 60) + '%';
-                coin.style.animationDelay = (i * 0.1) + 's';
-                coinsContainer.appendChild(coin);
-                setTimeout(() => coin.remove(), 1000);
+        // Coin animation for pots with monthly savings (only on first container to avoid double animation)
+        if (monthlySavings > 0 && containers[0]) {
+            const coinsContainer = containers[0].querySelector(`#pot-coins-${pot.id}`);
+            if (coinsContainer) {
+                for (let i = 0; i < Math.min(5, Math.floor(monthlySavings / 50) + 1); i++) {
+                    const coin = document.createElement('div');
+                    coin.className = 'pot-coin';
+                    coin.style.left = (10 + Math.random() * 60) + '%';
+                    coin.style.bottom = (Math.random() * 60) + '%';
+                    coin.style.animationDelay = (i * 0.1) + 's';
+                    coinsContainer.appendChild(coin);
+                    setTimeout(() => coin.remove(), 1000);
+                }
             }
         }
     });
