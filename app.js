@@ -1728,7 +1728,7 @@ function updateBuckVisuals(health) {
 }
 
 // ═══ YEARLY BILLS (Subscription Sinking Fund) ═══
-function getYearlyBillMonthlyAmount(bill) {
+function getYearlyBillMonthsLeft(bill) {
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
@@ -1742,10 +1742,14 @@ function getYearlyBillMonthlyAmount(bill) {
         targetYear++;
     }
 
-    const dueDate = new Date(targetYear, targetMonth, bill.dueDay);
-    const daysLeft = Math.max(1, Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24)));
-    const monthsLeft = Math.max(1, Math.ceil(daysLeft / 30));
+    // Count complete monthly contribution windows from now until the due month (excluding the due month itself).
+    // This gives a conservative catch-up pace so you're not scrambling to save in the same month the bill is due.
+    const monthsLeft = (targetYear - currentYear) * 12 + (targetMonth - currentMonth);
+    return Math.max(1, monthsLeft);
+}
 
+function getYearlyBillMonthlyAmount(bill) {
+    const monthsLeft = getYearlyBillMonthsLeft(bill);
     const remaining = Math.max(0, bill.yearlyAmount - (bill.savedAmount || 0));
 
     if (bill.savingsMode === 'steady') {
@@ -1819,7 +1823,7 @@ function renderYearlyBills() {
                         · Due ${monthNames[bill.dueMonth]} ${bill.dueDay}
                         ${reminder ? `<span class="yearly-bill-reminder ${reminder.level}">${reminder.msg}</span>` : ''}
                     </div>
-                    <div class="yearly-bill-save">Save <strong>$${formatWhole(monthlyAmt)}</strong>/mo</div>
+                    <div class="yearly-bill-save">Save <strong>$${formatMoney(monthlyAmt)}</strong>/mo</div>
                 </div>
                 <div class="yearly-bill-actions">
                     ${saved >= bill.yearlyAmount ? `<button class="btn-icon" onclick="markYearlyBillPaid('${bill.id}')" title="Mark Paid">
@@ -1927,7 +1931,7 @@ function updateYearlyBillPreview() {
     };
     const monthly = getYearlyBillMonthlyAmount(previewBill);
     const modeText = mode === 'catchup' ? 'Catch-up mode' : 'Steady mode';
-    document.getElementById('yearly-bill-preview').innerHTML = `<strong>${modeText}:</strong> Save <strong>$${formatWhole(monthly)}</strong> per month`;
+    document.getElementById('yearly-bill-preview').innerHTML = `<strong>${modeText}:</strong> Save <strong>$${formatMoney(monthly)}</strong> per month`;
 }
 
 function saveYearlyBill() {
