@@ -543,6 +543,12 @@ function playPop() {
 
 // ─── NAVIGATION ───
 function goto(sceneId) {
+    // Auto-save budget if leaving the budget setup page
+    const budgetScene = document.getElementById('scene-budget-setup');
+    if (budgetScene && budgetScene.classList.contains('active') && sceneId !== 'budget-setup') {
+        saveBudgetPlanSilent();
+    }
+
     document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
     const target = document.getElementById('scene-' + sceneId);
     if (target) {
@@ -1037,14 +1043,7 @@ function updateBudgetTotal() {
 // ─── STREAMING SERVICES QUICK-ADD ───
 
 
-function saveBudgetPlan() {
-    console.log('[saveBudgetPlan] starting. current state:', {
-        budgetIncome: state.budgetIncome,
-        budgetCategories: {...state.budgetCategories},
-        budgetSubItems: JSON.parse(JSON.stringify(state.budgetSubItems)),
-        currentMonth: state.currentMonth
-    });
-
+function saveBudgetPlanSilent() {
     // Save income from budget page
     const incomeInput = document.getElementById('budget-income-input');
     const incomeVal = parseFloat(incomeInput?.value) || 0;
@@ -1075,15 +1074,12 @@ function saveBudgetPlan() {
     delete newBudget['yearly_bills'];
     delete newSubItems['yearly_bills'];
 
-    const wraps = document.querySelectorAll('.budget-cat-wrap');
-    console.log('[saveBudgetPlan] found', wraps.length, 'budget-cat-wrap elements');
-    wraps.forEach(wrap => {
+    document.querySelectorAll('.budget-cat-wrap').forEach(wrap => {
         const catId = wrap.dataset.cat;
         let catTotal = 0;
         const catSubs = {};
-        const rows = wrap.querySelectorAll('.sub-item-row');
 
-        rows.forEach(row => {
+        wrap.querySelectorAll('.sub-item-row').forEach(row => {
             const customName = row.querySelector('.sub-item-custom-name');
             const input = row.querySelector('.sub-item-input');
             const recurringToggle = row.querySelector('.recurring-toggle');
@@ -1093,7 +1089,6 @@ function saveBudgetPlan() {
                 catTotal += val;
                 catSubs[name] = val;
             }
-            // Manage recurring template per rendered row
             if (recurringToggle && recurringToggle.checked && val > 0) {
                 if (!newRecurring[catId]) newRecurring[catId] = {};
                 newRecurring[catId][name] = val;
@@ -1107,13 +1102,10 @@ function saveBudgetPlan() {
             newBudget[catId] = Math.round(catTotal * 100) / 100;
             newSubItems[catId] = catSubs;
         } else {
-            // Category rendered but empty -> remove it
             delete newBudget[catId];
             delete newSubItems[catId];
         }
     });
-
-    console.log('[saveBudgetPlan] collected categories:', newBudget, newSubItems);
 
     // Collect yearly bill inputs
     const yearlyBillSubs = {};
@@ -1135,10 +1127,8 @@ function saveBudgetPlan() {
     }
 
     const totalBudgeted = Object.values(newBudget).reduce((a, b) => a + b, 0);
-    console.log('[saveBudgetPlan] totalBudgeted:', totalBudgeted);
     if (totalBudgeted === 0) {
-        shakeElement(document.getElementById('budget-categories'));
-        return;
+        return false;
     }
 
     state.budgetCategories = newBudget;
@@ -1146,8 +1136,28 @@ function saveBudgetPlan() {
     state.recurringBudget = newRecurring;
     state.setupComplete = true;
 
-    // Accumulate yearly bill savings
-    const yearlySubItems = newSubItems['yearly_bills'] || {};
+    saveState();
+    saveGlobalState();
+    saveRecurring();
+    return true;
+}
+
+function saveBudgetPlan() {
+    console.log('[saveBudgetPlan] starting. current state:', {
+        budgetIncome: state.budgetIncome,
+        budgetCategories: {...state.budgetCategories},
+        budgetSubItems: JSON.parse(JSON.stringify(state.budgetSubItems)),
+        currentMonth: state.currentMonth
+    });
+
+    const saved = saveBudgetPlanSilent();
+    if (!saved) {
+        shakeElement(document.getElementById('budget-categories'));
+        return;
+    }
+
+    // Accumulate yearly bill savings (only on explicit save)
+    const yearlySubItems = state.budgetSubItems['yearly_bills'] || {};
     state.yearlyBills.forEach(bill => {
         if (bill.status !== 'active') return;
         const key = `📅 ${bill.name}`;
@@ -1156,15 +1166,13 @@ function saveBudgetPlan() {
             bill.savedAmount = (bill.savedAmount || 0) + savedAmt;
         }
     });
+    saveGlobalState();
 
     console.log('[saveBudgetPlan] final state to save:', {
         budgetCategories: {...state.budgetCategories},
         budgetSubItems: JSON.parse(JSON.stringify(state.budgetSubItems))
     });
 
-    saveState();
-    saveGlobalState();
-    saveRecurring();
     playChaChing();
     fireConfetti();
     goto('tracker');
