@@ -251,6 +251,14 @@ function loadState() {
     state.monthHistory = global.monthHistory || state.monthHistory;
     state.yearlyBills = global.yearlyBills || [];
 
+    // Migrate existing yearly bills: prevent already-inflated savedAmount from growing further
+    const currentKey = getMonthKey(state.currentMonth);
+    state.yearlyBills.forEach(bill => {
+        if (bill.lastContributionMonth === undefined) {
+            bill.lastContributionMonth = (bill.savedAmount || 0) > 0 ? currentKey : null;
+        }
+    });
+
     if (saved) {
         try {
             const parsed = JSON.parse(saved);
@@ -1156,14 +1164,16 @@ function saveBudgetPlan() {
         return;
     }
 
-    // Accumulate yearly bill savings (only on explicit save)
+    // Accumulate yearly bill savings (only on explicit save, once per month)
+    const currentMonthKey = getMonthKey(state.currentMonth);
     const yearlySubItems = state.budgetSubItems['yearly_bills'] || {};
     state.yearlyBills.forEach(bill => {
         if (bill.status !== 'active') return;
         const key = `📅 ${bill.name}`;
         const savedAmt = yearlySubItems[key] || 0;
-        if (savedAmt > 0) {
+        if (savedAmt > 0 && bill.lastContributionMonth !== currentMonthKey) {
             bill.savedAmount = (bill.savedAmount || 0) + savedAmt;
+            bill.lastContributionMonth = currentMonthKey;
         }
     });
     saveGlobalState();
@@ -1950,6 +1960,7 @@ function saveYearlyBill() {
             status: 'active',
             savingsMode: mode,
             savedAmount: 0,
+            lastContributionMonth: null,
             history: [],
             createdAt: new Date().toISOString()
         });
@@ -1993,6 +2004,7 @@ function markYearlyBillPaid(billId) {
 
     // Reset saved amount for next year
     bill.savedAmount = Math.max(0, saved - bill.yearlyAmount);
+    bill.lastContributionMonth = null;
     bill.lastPaidMonth = monthKey;
 
     // If cancelling, mark as cancelled after this payment
