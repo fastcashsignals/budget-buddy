@@ -1188,6 +1188,84 @@ function saveBudgetPlan() {
     goto('tracker');
 }
 
+// ─── TRACKER CALENDAR ───
+let _calendarViewDate = new Date();
+let _calendarSelectedDate = new Date().toISOString().split('T')[0];
+
+function getCalendarMonthKey(date) {
+    return date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+}
+
+function changeCalendarMonth(dir) {
+    _calendarViewDate.setMonth(_calendarViewDate.getMonth() + dir);
+    renderCalendar();
+}
+
+function selectCalendarDay(dateStr) {
+    _calendarSelectedDate = dateStr;
+    const dateIn = document.getElementById('tracker-date');
+    if (dateIn) dateIn.value = dateStr;
+    renderCalendar();
+}
+
+function onDateInputChange() {
+    const dateIn = document.getElementById('tracker-date');
+    if (!dateIn || !dateIn.value) return;
+    _calendarSelectedDate = dateIn.value;
+    const [y, m] = dateIn.value.split('-').map(Number);
+    _calendarViewDate = new Date(y, m - 1, 1);
+    renderCalendar();
+}
+
+function renderCalendar() {
+    const grid = document.getElementById('calendar-grid');
+    const label = document.getElementById('calendar-month-label');
+    if (!grid) return;
+
+    const year = _calendarViewDate.getFullYear();
+    const month = _calendarViewDate.getMonth();
+    label.textContent = _calendarViewDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    // Daily spending totals for this month
+    const dailyTotals = {};
+    state.transactions.forEach(t => {
+        if (!t.date) return;
+        const [ty, tm] = t.date.split('-').map(Number);
+        if (ty === year && tm === month + 1) {
+            dailyTotals[t.date] = (dailyTotals[t.date] || 0) + (t.amount || 0);
+        }
+    });
+
+    const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    let html = dayNames.map(d => `<div class="calendar-day-label">${d}</div>`).join('');
+
+    for (let i = 0; i < firstDay; i++) {
+        html += '<div class="calendar-day empty"></div>';
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const isToday = dateStr === todayStr;
+        const isSelected = dateStr === _calendarSelectedDate;
+        const dayTotal = dailyTotals[dateStr] || 0;
+        const hasSpend = dayTotal > 0;
+        const spendClass = dayTotal > 50 ? '' : 'low';
+
+        html += `
+            <div class="calendar-day ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}" onclick="selectCalendarDay('${dateStr}')">
+                <span>${day}</span>
+                ${hasSpend ? `<span class="calendar-day-spend ${spendClass}"></span>` : ''}
+            </div>
+        `;
+    }
+
+    grid.innerHTML = html;
+}
+
 // ─── DAILY TRACKER (MAIN SCREEN) ───
 function initTracker() {
     updateMonthSelector();
@@ -1197,6 +1275,10 @@ function initTracker() {
     if (dateIn && !dateIn.value) {
         dateIn.value = new Date().toISOString().split('T')[0];
     }
+    if (dateIn && dateIn.value) {
+        _calendarSelectedDate = dateIn.value;
+    }
+    renderCalendar();
 
     // Buck health
     const health = getBuckHealth();
