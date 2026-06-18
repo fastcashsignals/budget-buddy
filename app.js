@@ -2143,6 +2143,34 @@ function renderRollovers() {
 }
 
 // ═══ DASHBOARD ═══
+function renderYearlyBillsSummary() {
+    const container = document.getElementById('yearly-bills-summary-list');
+    const totalEl = document.getElementById('yearly-bills-summary-total');
+    if (!container || !totalEl) return;
+
+    if (state.yearlyBills.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:12px 0;margin:0;">No yearly bills set up yet.</p>';
+        totalEl.textContent = '$0';
+        return;
+    }
+
+    let total = 0;
+    container.innerHTML = state.yearlyBills.map(bill => {
+        const monthly = getYearlyBillMonthlyAmount(bill);
+        total += monthly;
+        const daysLeft = getYearlyBillDaysUntil(bill);
+        return `
+            <div class="yearly-bill-summary-row">
+                <div class="yearly-bill-summary-name">${bill.icon || '📋'} ${bill.name}</div>
+                <div class="yearly-bill-summary-amount">$${formatMoney(monthly)}<span class="yearly-bill-summary-period">/mo</span></div>
+                <div class="yearly-bill-summary-due">${daysLeft <= 31 ? '⚠️ ' : ''}${daysLeft} days left</div>
+            </div>
+        `;
+    }).join('');
+
+    totalEl.textContent = '$' + formatMoney(total);
+}
+
 function renderDashboard() {
     updateMonthSelector();
 
@@ -2229,6 +2257,9 @@ function renderDashboard() {
 
     // Savings Pot
     renderSavingsPots();
+
+    // Yearly Bills Summary
+    renderYearlyBillsSummary();
 
     // Rollovers
     renderRollovers();

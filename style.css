@@ -2733,3 +2733,61 @@ select, input[type="date"] {
     border-radius: 8px;
     min-height: 32px;
 }
+
+/* ═══ YEARLY BILLS SUMMARY ═══ */
+.yearly-bills-summary-card {
+    padding: 20px;
+}
+
+.yearly-bills-summary-total {
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--accent);
+    text-align: center;
+    margin: 12px 0 16px;
+}
+
+.yearly-bills-summary-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.yearly-bill-summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--bg);
+    border-radius: 10px;
+    flex-wrap: wrap;
+}
+
+.yearly-bill-summary-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text);
+    flex: 1;
+}
+
+.yearly-bill-summary-amount {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--accent);
+}
+
+.yearly-bill-summary-period {
+    font-size: 12px;
+    color: var(--text-light);
+    font-weight: 500;
+    margin-left: 2px;
+}
+
+.yearly-bill-summary-due {
+    font-size: 12px;
+    color: var(--text-light);
+    width: 100%;
+    text-align: right;
+    margin-top: 2px;
+}
