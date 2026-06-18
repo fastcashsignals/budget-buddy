@@ -2248,6 +2248,7 @@ function renderSavingsPots() {
     ].filter(Boolean);
 
     if (containers.length === 0) return;
+    containers.forEach(c => c.innerHTML = '');
 
     if (state.savingsPots.length === 0) {
         containers.forEach(c => c.innerHTML = '<p class="help-text">No savings goals yet. Start one below!</p>');
@@ -2287,10 +2288,10 @@ function renderSavingsPots() {
                             <span class="btn-icon-emoji">✏️</span>
                             <span class="btn-icon-label">Rename</span>
                         </button>
-                        ${state.savingsPots.length > 1 ? `<button class="btn-icon" onclick="deletePot('${pot.id}')" title="Delete">
+                        <button class="btn-icon" onclick="deletePot('${pot.id}')" title="Delete">
                             <span class="btn-icon-emoji">🗑️</span>
                             <span class="btn-icon-label">Delete</span>
-                        </button>` : ''}
+                        </button>
                     </div>
                 </div>
                 <div class="pot-total">$${formatMoney(runningTotal)}</div>
