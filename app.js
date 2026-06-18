@@ -1035,9 +1035,13 @@ function saveBudgetPlan() {
         }
     }
 
-    const newBudget = {};
-    const newSubItems = {};
-    const newRecurring = {};
+    const newBudget = { ...state.budgetCategories };
+    const newSubItems = JSON.parse(JSON.stringify(state.budgetSubItems || {}));
+    const newRecurring = JSON.parse(JSON.stringify(state.recurringBudget || {}));
+
+    // We'll re-collect yearly bills separately; remove old yearly_bills totals first
+    delete newBudget['yearly_bills'];
+    delete newSubItems['yearly_bills'];
 
     const wraps = document.querySelectorAll('.budget-cat-wrap');
     console.log('[saveBudgetPlan] found', wraps.length, 'budget-cat-wrap elements');
@@ -1046,7 +1050,6 @@ function saveBudgetPlan() {
         let catTotal = 0;
         const catSubs = {};
         const rows = wrap.querySelectorAll('.sub-item-row');
-        console.log('[saveBudgetPlan] cat', catId, 'has', rows.length, 'rows');
 
         rows.forEach(row => {
             const customName = row.querySelector('.sub-item-custom-name');
@@ -1054,20 +1057,27 @@ function saveBudgetPlan() {
             const recurringToggle = row.querySelector('.recurring-toggle');
             const name = customName ? (customName.value.trim() || 'Other') : input.dataset.sub;
             const val = parseFloat(input.value) || 0;
-            console.log('[saveBudgetPlan] row', name, 'input value:', input?.value, 'parsed:', val);
             if (val > 0) {
                 catTotal += val;
                 catSubs[name] = val;
             }
+            // Manage recurring template per rendered row
             if (recurringToggle && recurringToggle.checked && val > 0) {
                 if (!newRecurring[catId]) newRecurring[catId] = {};
                 newRecurring[catId][name] = val;
+            } else if (recurringToggle && !recurringToggle.checked && newRecurring[catId]) {
+                delete newRecurring[catId][name];
+                if (Object.keys(newRecurring[catId]).length === 0) delete newRecurring[catId];
             }
         });
 
         if (catTotal > 0) {
             newBudget[catId] = Math.round(catTotal * 100) / 100;
             newSubItems[catId] = catSubs;
+        } else {
+            // Category rendered but empty -> remove it
+            delete newBudget[catId];
+            delete newSubItems[catId];
         }
     });
 
