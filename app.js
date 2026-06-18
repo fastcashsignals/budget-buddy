@@ -2128,7 +2128,7 @@ function renderRollovers() {
         row.innerHTML = `
             <div class="rollover-info">
                 <div class="rollover-name">${cat.icon} ${cat.name}</div>
-                <div class="rollover-detail">Budgeted $${formatWhole(budgeted)} · Spent $${formatWhole(actual)} · Left <strong>$${formatWhole(leftover)}</strong></div>
+                <div class="rollover-detail">Budget $${formatWhole(budgeted)} · Spent $${formatWhole(actual)} · <strong>$${formatWhole(leftover)} left</strong></div>
             </div>
             <button class="btn-secondary rollover-btn" onclick="rollOverCategory('${cat.id}')">Roll Over</button>
         `;
