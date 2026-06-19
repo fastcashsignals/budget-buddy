@@ -2604,10 +2604,15 @@ function deletePot(potId) {
     if (!confirm('Delete this savings goal? The history will be lost.')) return;
     const pot = state.savingsPots.find(p => p.id === potId);
     if (pot) {
-        const key = `💰 ${pot.name}`;
-        // Remove from savings sub-items
+        // Remove any savings sub-item tied to this pot name (with or without 💰 prefix)
         if (state.budgetSubItems['savings']) {
-            delete state.budgetSubItems['savings'][key];
+            const keysToDelete = Object.keys(state.budgetSubItems['savings']).filter(k =>
+                k === `💰 ${pot.name}` ||
+                k.trim().toLowerCase() === pot.name.trim().toLowerCase() ||
+                k.replace(/^\ud83d\udcb0\s*/, '').trim().toLowerCase() === pot.name.trim().toLowerCase()
+            );
+            keysToDelete.forEach(k => delete state.budgetSubItems['savings'][k]);
+
             const remainingTotal = Object.values(state.budgetSubItems['savings']).reduce((sum, v) => sum + (parseFloat(v) || 0), 0);
             if (remainingTotal > 0) {
                 state.budgetCategories['savings'] = remainingTotal;
@@ -2620,7 +2625,12 @@ function deletePot(potId) {
         }
         // Remove from recurring budget
         if (state.recurringBudget['savings']) {
-            delete state.recurringBudget['savings'][key];
+            const recKeysToDelete = Object.keys(state.recurringBudget['savings']).filter(k =>
+                k === `💰 ${pot.name}` ||
+                k.trim().toLowerCase() === pot.name.trim().toLowerCase() ||
+                k.replace(/^\ud83d\udcb0\s*/, '').trim().toLowerCase() === pot.name.trim().toLowerCase()
+            );
+            recKeysToDelete.forEach(k => delete state.recurringBudget['savings'][k]);
             if (Object.keys(state.recurringBudget['savings']).length === 0) {
                 delete state.recurringBudget['savings'];
             }
