@@ -343,6 +343,7 @@
                         <span class="number-value" id="tracker-left">$0</span>
                     </div>
                 </div>
+                <p class="help-text" style="margin:12px 0 0 0;text-align:center;">Income plus extra minus spending. Red means you went over.</p>
             </div>
 
             <!-- Two Pie Charts: Budget Plan vs Actual -->
@@ -373,6 +374,7 @@
                         <div class="pie-legend" id="tracker-pie-actual-legend"></div>
                     </div>
                 </div>
+                <p class="help-text" style="margin:12px 0 0 0;text-align:center;">Left chart shows your planned budget. Right chart shows what you actually spent.</p>
             </div>
 
             <!-- Extra Income Summary (read-only, managed on Budget page) -->
@@ -402,6 +404,7 @@
             <!-- Quick Add -->
             <div class="card tracker-quick-add">
                 <h3>🔫 Log a Purchase</h3>
+                <p class="help-text" style="margin:0 0 12px 0;">Pick a category, enter the amount, and tap Add. The calendar above sets the date.</p>
                 <div class="tracker-form">
                     <div class="tracker-input-row" style="margin-bottom:10px;">
                         <select id="tracker-cat-select" class="tracker-select" style="margin-bottom:0;flex:2;-webkit-appearance:none;-moz-appearance:none;appearance:none;background:var(--card);">
@@ -429,6 +432,7 @@
             <!-- Recent Transactions -->
             <div class="card tracker-transactions-card">
                 <h3>📝 This Month's Purchases <span class="tx-count" id="tracker-tx-count"></span></h3>
+                <p class="help-text" style="margin:0 0 12px 0;">Tap ✕ to remove a purchase. Use the arrows to flip through pages.</p>
                 <div id="tracker-transactions" class="tracker-transactions-scroll"></div>
             </div>
         </section>
