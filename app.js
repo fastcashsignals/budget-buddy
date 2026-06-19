@@ -2603,26 +2603,34 @@ function startNewPot() {
 function deletePot(potId) {
     if (!confirm('Delete this savings goal? The history will be lost.')) return;
     const pot = state.savingsPots.find(p => p.id === potId);
-    if (pot && state.budgetSubItems['savings']) {
+    if (pot) {
         const key = `💰 ${pot.name}`;
-        delete state.budgetSubItems['savings'][key];
-        // Recalculate savings category total from remaining sub-items
-        const remainingTotal = Object.values(state.budgetSubItems['savings']).reduce((sum, v) => sum + (parseFloat(v) || 0), 0);
-        if (remainingTotal > 0) {
-            state.budgetCategories['savings'] = remainingTotal;
+        // Remove from savings sub-items
+        if (state.budgetSubItems['savings']) {
+            delete state.budgetSubItems['savings'][key];
+            const remainingTotal = Object.values(state.budgetSubItems['savings']).reduce((sum, v) => sum + (parseFloat(v) || 0), 0);
+            if (remainingTotal > 0) {
+                state.budgetCategories['savings'] = remainingTotal;
+            } else {
+                delete state.budgetCategories['savings'];
+                delete state.budgetSubItems['savings'];
+            }
         } else {
             delete state.budgetCategories['savings'];
-            delete state.budgetSubItems['savings'];
+        }
+        // Remove from recurring budget
+        if (state.recurringBudget['savings']) {
+            delete state.recurringBudget['savings'][key];
+            if (Object.keys(state.recurringBudget['savings']).length === 0) {
+                delete state.recurringBudget['savings'];
+            }
         }
     }
     state.savingsPots = state.savingsPots.filter(p => p.id !== potId);
     saveState();
     renderDashboard();
-    // Refresh budget setup if it's currently open so the deleted pot row disappears
-    const budgetScene = document.getElementById('scene-budget-setup');
-    if (budgetScene && budgetScene.classList.contains('active')) {
-        initBudgetSetup();
-    }
+    // Always refresh budget setup so the deleted pot row and total update
+    initBudgetSetup();
     playPop();
 }
 
