@@ -2946,3 +2946,44 @@ select, input[type="date"] {
     background: var(--text-light);
     border-radius: 4px;
 }
+
+/* ═══ TRACKER TRANSACTIONS PAGINATION ═══ */
+.tx-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.tx-page-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.tx-page-btn:hover:not(:disabled) {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.tx-page-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.tx-page-info {
+    font-size: 13px;
+    color: var(--text-light);
+    font-weight: 500;
+}

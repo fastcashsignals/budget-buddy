@@ -1690,10 +1690,21 @@ function renderTrackerTransactions() {
         return;
     }
 
+    const pageSize = 10;
+    let currentPage = container.dataset.page ? parseInt(container.dataset.page) : 1;
+    const totalPages = Math.ceil(txs.length / pageSize);
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+    container.dataset.page = currentPage;
+
+    const start = (currentPage - 1) * pageSize;
+    const pageTxs = txs.slice(start, start + pageSize);
+
     container.innerHTML = '';
     const countEl = document.getElementById('tracker-tx-count');
     if (countEl) countEl.textContent = `(${txs.length})`;
-    txs.forEach(tx => {
+
+    pageTxs.forEach(tx => {
         const cat = CATEGORIES.find(c => c.id === tx.category);
         const dateStr = tx.date ? new Date(tx.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
         const row = document.createElement('div');
@@ -1711,6 +1722,26 @@ function renderTrackerTransactions() {
         `;
         container.appendChild(row);
     });
+
+    // Pagination controls
+    if (totalPages > 1) {
+        const pagination = document.createElement('div');
+        pagination.className = 'tx-pagination';
+        pagination.innerHTML = `
+            <button class="tx-page-btn" onclick="changeTxPage(-1)" ${currentPage === 1 ? 'disabled' : ''}>← Previous</button>
+            <span class="tx-page-info">Page ${currentPage} of ${totalPages}</span>
+            <button class="tx-page-btn" onclick="changeTxPage(1)" ${currentPage === totalPages ? 'disabled' : ''}>Next →</button>
+        `;
+        container.appendChild(pagination);
+    }
+}
+
+function changeTxPage(delta) {
+    const container = document.getElementById('tracker-transactions');
+    if (!container) return;
+    const currentPage = parseInt(container.dataset.page || '1');
+    container.dataset.page = currentPage + delta;
+    renderTrackerTransactions();
 }
 
 function renderTrackerBars() {
