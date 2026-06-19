@@ -1568,7 +1568,7 @@ function renderPieChart(totalIncome, totalActual, left) {
             `).join('');
             if (totalBudget > totalIncome && totalIncome > 0) {
                 const overAmt = totalBudget - totalIncome;
-                legendHTML += `<div class="pie-legend-item"><span class="pie-dot" style="background:var(--danger)"></span> Over Budget ($${formatMoney(overAmt)})</div>`;
+                legendHTML += `<div class="pie-legend-item"><span class="pie-dot" style="background:var(--danger)"></span> Over Allocated ($${formatMoney(overAmt)})</div>`;
             }
             budgetLegend.innerHTML = legendHTML;
         }
@@ -1586,7 +1586,24 @@ function renderPieChart(totalIncome, totalActual, left) {
         const plannedBudget = getTotalBudgeted();
 
         // If budget plan itself exceeds income, show warning regardless of spending
-        if (plannedBudget > totalIncome && totalIncome > 0) {
+        if (totalActual > totalIncome && totalIncome > 0) {
+            actualSvg.innerHTML = `
+                <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--danger)" stroke-width="12"
+                    stroke-dasharray="${circ}" stroke-dashoffset="0" transform="rotate(-90 ${cx} ${cy})" />
+            `;
+            if (actualPctEl) {
+                actualPctEl.textContent = 'OVER';
+                actualPctEl.style.color = 'var(--danger)';
+                actualPctEl.style.fontSize = '16px';
+            }
+            if (actualLegend) {
+                const overAmt = totalActual - totalIncome;
+                actualLegend.innerHTML = `
+                    <div class="pie-legend-item"><span class="pie-dot" style="background:var(--danger)"></span> Spent $${formatMoney(overAmt)} over income</div>
+                `;
+            }
+        } else if (plannedBudget > totalIncome && totalIncome > 0) {
+            // Plan over income but actual spending hasn't caught up yet
             actualSvg.innerHTML = `
                 <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--danger)" stroke-width="12"
                     stroke-dasharray="${circ}" stroke-dashoffset="0" transform="rotate(-90 ${cx} ${cy})" />
