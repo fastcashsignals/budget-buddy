@@ -1681,15 +1681,19 @@ function renderTrackerTransactions() {
     const container = document.getElementById('tracker-transactions');
     if (!container) return;
 
-    const recent = [...state.transactions].reverse().slice(0, 10);
+    const txs = [...state.transactions].reverse();
 
-    if (recent.length === 0) {
-        container.innerHTML = '<p class="tracker-empty">No purchases yet today. Buck is waiting! 👀</p>';
+    if (txs.length === 0) {
+        container.innerHTML = '<p class="tracker-empty">No purchases yet this month. Buck is waiting! 👀</p>';
+        const countEl = document.getElementById('tracker-tx-count');
+        if (countEl) countEl.textContent = '';
         return;
     }
 
     container.innerHTML = '';
-    recent.forEach(tx => {
+    const countEl = document.getElementById('tracker-tx-count');
+    if (countEl) countEl.textContent = `(${txs.length})`;
+    txs.forEach(tx => {
         const cat = CATEGORIES.find(c => c.id === tx.category);
         const dateStr = tx.date ? new Date(tx.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
         const row = document.createElement('div');
