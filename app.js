@@ -2606,10 +2606,23 @@ function deletePot(potId) {
     if (pot && state.budgetSubItems['savings']) {
         const key = `💰 ${pot.name}`;
         delete state.budgetSubItems['savings'][key];
+        // Recalculate savings category total from remaining sub-items
+        const remainingTotal = Object.values(state.budgetSubItems['savings']).reduce((sum, v) => sum + (parseFloat(v) || 0), 0);
+        if (remainingTotal > 0) {
+            state.budgetCategories['savings'] = remainingTotal;
+        } else {
+            delete state.budgetCategories['savings'];
+            delete state.budgetSubItems['savings'];
+        }
     }
     state.savingsPots = state.savingsPots.filter(p => p.id !== potId);
     saveState();
     renderDashboard();
+    // Refresh budget setup if it's currently open so the deleted pot row disappears
+    const budgetScene = document.getElementById('scene-budget-setup');
+    if (budgetScene && budgetScene.classList.contains('active')) {
+        initBudgetSetup();
+    }
     playPop();
 }
 
