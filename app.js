@@ -187,14 +187,18 @@ function getPaycheckFromMonthly(monthly, frequency) {
 // Generate all paycheck dates in the current budget month based on a starting pay date and frequency
 function getPaycheckDatesInMonth(startDateStr, frequency, monthStr) {
     const dates = [];
-    const start = new Date(startDateStr);
-    if (isNaN(start)) return dates;
+    let start = startDateStr ? new Date(startDateStr) : null;
     const monthStart = new Date(monthStr + ' 1');
     if (isNaN(monthStart)) return dates;
     const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
 
     const stepDays = frequency === 'weekly' ? 7 : (frequency === 'biweekly' ? 14 : 0);
     if (stepDays === 0) return dates;
+
+    if (!start || isNaN(start)) {
+        // Default to first day of the month if no pay date set
+        start = new Date(monthStart);
+    }
 
     // Walk backwards from start date to find first payday in or before the month
     let current = new Date(start);
@@ -758,13 +762,14 @@ function initBudgetSetup() {
 
     function renderPaycheckList() {
         if (!paycheckList) return;
+        const currentIncomeInput = document.getElementById('budget-income-input');
         const frequency = frequencySelect ? frequencySelect.value : (state.incomeFrequency || 'monthly');
         if (frequency === 'monthly') {
             paycheckList.innerHTML = '';
-            if (incomeInput) incomeInput.parentElement.style.display = 'flex';
+            if (currentIncomeInput) currentIncomeInput.parentElement.style.display = 'flex';
             return;
         }
-        if (incomeInput) incomeInput.parentElement.style.display = 'none';
+        if (currentIncomeInput) currentIncomeInput.parentElement.style.display = 'none';
 
         const dates = getPaycheckDatesInMonth(payDateInput ? payDateInput.value : state.paycheckDate, frequency, state.currentMonth);
         if (dates.length === 0) {
@@ -809,13 +814,14 @@ function initBudgetSetup() {
         frequencySelect.value = state.incomeFrequency || 'monthly';
         frequencySelect.addEventListener('change', () => {
             state.incomeFrequency = frequencySelect.value;
+            const currentIncomeInput = document.getElementById('budget-income-input');
             if (frequencySelect.value === 'monthly') {
-                if (incomeInput) {
-                    incomeInput.parentElement.style.display = 'flex';
-                    incomeInput.value = state.budgetIncome > 0 ? state.budgetIncome.toFixed(2) : '';
+                if (currentIncomeInput) {
+                    currentIncomeInput.parentElement.style.display = 'flex';
+                    currentIncomeInput.value = state.budgetIncome > 0 ? state.budgetIncome.toFixed(2) : '';
                 }
                 if (paycheckList) paycheckList.innerHTML = '';
-                updateIncomeDisplay(parseFloat(incomeInput?.value) || 0);
+                updateIncomeDisplay(parseFloat(currentIncomeInput?.value) || 0);
             } else {
                 renderPaycheckList();
             }
@@ -846,9 +852,12 @@ function initBudgetSetup() {
     // Initial render
     if (frequencySelect && frequencySelect.value !== 'monthly') {
         renderPaycheckList();
-    } else if (incomeInput) {
-        incomeInput.parentElement.style.display = 'flex';
-        incomeInput.value = state.budgetIncome > 0 ? state.budgetIncome.toFixed(2) : '';
+    } else {
+        const currentIncomeInput = document.getElementById('budget-income-input');
+        if (currentIncomeInput) {
+            currentIncomeInput.parentElement.style.display = 'flex';
+            currentIncomeInput.value = state.budgetIncome > 0 ? state.budgetIncome.toFixed(2) : '';
+        }
         updateIncomeDisplay(state.budgetIncome);
     }
 
