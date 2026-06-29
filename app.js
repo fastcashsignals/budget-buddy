@@ -689,20 +689,26 @@ function initBudgetSetup() {
     const calcNote = document.getElementById('budget-income-calc-note');
 
     function updateIncomeFromPaycheck() {
-        const perCheck = parseFloat(incomeInput.value) || 0;
-        const frequency = frequencySelect ? frequencySelect.value : 'monthly';
+        const currentInput = document.getElementById('budget-income-input');
+        const currentFreq = document.getElementById('budget-income-frequency');
+        const currentPayDate = document.getElementById('budget-income-pay-date');
+        const perCheck = parseFloat(currentInput?.value) || 0;
+        const frequency = currentFreq ? currentFreq.value : (state.incomeFrequency || 'monthly');
         const monthly = getMonthlyFromPaycheck(perCheck, frequency);
         state.budgetIncome = monthly;
         state.income = monthly;
-        if (frequencySelect) state.incomeFrequency = frequency;
-        if (payDateInput) state.paycheckDate = payDateInput.value;
+        state.incomeFrequency = frequency;
+        state.paycheckDate = currentPayDate ? currentPayDate.value : (state.paycheckDate || '');
         updateBudgetTotal();
         updateBudgetBuck();
         const display = document.getElementById('budget-income-display');
         if (display) display.textContent = '$' + formatMoney(monthly);
-        if (calcNote) calcNote.textContent = monthly > 0
-            ? `Budget uses $${formatMoney(monthly)} per month based on ${frequencySelect.options[frequencySelect.selectedIndex].text.toLowerCase()}.`
-            : 'Budget uses the monthly equivalent.';
+        if (calcNote) {
+            const freqText = currentFreq ? currentFreq.options[currentFreq.selectedIndex].text.toLowerCase() : 'monthly';
+            calcNote.textContent = monthly > 0
+                ? `Budget uses $${formatMoney(monthly)} per month based on ${freqText}.`
+                : 'Budget uses the monthly equivalent.';
+        }
     }
 
     if (incomeInput) {
