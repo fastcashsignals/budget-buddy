@@ -2972,3 +2972,41 @@ select, input[type="date"] {
     color: var(--text-light);
     font-weight: 500;
 }
+
+/* ═══ PAYCHECK LIST ═══ */
+.paycheck-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.paycheck-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--card);
+    padding: 8px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+
+.paycheck-number {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 24px;
+    text-align: center;
+}
+
+.paycheck-date {
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 14px;
+    padding: 6px;
+    border-radius: 8px;
+}
+
+.paycheck-row .money-input {
+    min-width: 90px;
+}

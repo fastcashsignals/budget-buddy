@@ -112,6 +112,7 @@ let state = {
     budgetIncomeSources: [],
     incomeFrequency: 'monthly', // monthly, biweekly, weekly
     paycheckDate: '', // date string YYYY-MM-DD
+    paychecks: [], // { id, date, amount } for weekly/biweekly variable income
     budgetCategories: {},  // { catId: budgetedAmount }
     budgetSubItems: {},    // { catId: { 'Rent / Mortgage': 1200, 'Other': 150 } }
 
@@ -181,6 +182,33 @@ function getPaycheckFromMonthly(monthly, frequency) {
         case 'monthly':
         default: return val.toFixed(2);
     }
+}
+
+// Generate all paycheck dates in the current budget month based on a starting pay date and frequency
+function getPaycheckDatesInMonth(startDateStr, frequency, monthStr) {
+    const dates = [];
+    const start = new Date(startDateStr);
+    if (isNaN(start)) return dates;
+    const monthStart = new Date(monthStr + ' 1');
+    if (isNaN(monthStart)) return dates;
+    const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
+
+    const stepDays = frequency === 'weekly' ? 7 : (frequency === 'biweekly' ? 14 : 0);
+    if (stepDays === 0) return dates;
+
+    // Walk backwards from start date to find first payday in or before the month
+    let current = new Date(start);
+    while (current > monthStart) {
+        current.setDate(current.getDate() - stepDays);
+    }
+    // Walk forwards to collect paydays within the month
+    while (current <= monthEnd) {
+        if (current >= monthStart) {
+            dates.push(new Date(current));
+        }
+        current.setDate(current.getDate() + stepDays);
+    }
+    return dates;
 }
 
 // Month key helper: "June 2026" → "2026-06"
@@ -293,6 +321,7 @@ function loadState() {
             state.budgetIncomeSources = parsed.budgetIncomeSources || [];
             state.incomeFrequency = parsed.incomeFrequency || 'monthly';
             state.paycheckDate = parsed.paycheckDate || '';
+            state.paychecks = parsed.paychecks || [];
             state.budgetCategories = parsed.budgetCategories || {};
             state.budgetSubItems = parsed.budgetSubItems || {};
             state.transactions = parsed.transactions || [];
@@ -318,6 +347,7 @@ function saveState() {
         budgetIncomeSources: state.budgetIncomeSources,
         incomeFrequency: state.incomeFrequency,
         paycheckDate: state.paycheckDate,
+        paychecks: state.paychecks,
         budgetCategories: state.budgetCategories,
         budgetSubItems: state.budgetSubItems,
         transactions: state.transactions,
@@ -686,53 +716,140 @@ function initBudgetSetup() {
     const incomeInput = document.getElementById('budget-income-input');
     const frequencySelect = document.getElementById('budget-income-frequency');
     const payDateInput = document.getElementById('budget-income-pay-date');
+    const paycheckList = document.getElementById('budget-paycheck-list');
     const calcNote = document.getElementById('budget-income-calc-note');
+    const incomeDisplay = document.getElementById('budget-income-display');
 
-    function updateIncomeFromPaycheck() {
-        const currentInput = document.getElementById('budget-income-input');
-        const currentFreq = document.getElementById('budget-income-frequency');
-        const currentPayDate = document.getElementById('budget-income-pay-date');
-        const perCheck = parseFloat(currentInput?.value) || 0;
-        const frequency = currentFreq ? currentFreq.value : (state.incomeFrequency || 'monthly');
-        const monthly = getMonthlyFromPaycheck(perCheck, frequency);
+    function updateIncomeDisplay(monthly, freqText) {
         state.budgetIncome = monthly;
         state.income = monthly;
-        state.incomeFrequency = frequency;
-        state.paycheckDate = currentPayDate ? currentPayDate.value : (state.paycheckDate || '');
-        updateBudgetTotal();
-        updateBudgetBuck();
-        const display = document.getElementById('budget-income-display');
-        if (display) display.textContent = '$' + formatMoney(monthly);
+        if (incomeDisplay) incomeDisplay.textContent = '$' + formatMoney(monthly);
         if (calcNote) {
-            const freqText = currentFreq ? currentFreq.options[currentFreq.selectedIndex].text.toLowerCase() : 'monthly';
             calcNote.textContent = monthly > 0
-                ? `Budget uses $${formatMoney(monthly)} per month based on ${freqText}.`
+                ? `Budget uses $${formatMoney(monthly)} per month based on ${freqText || (frequencySelect ? frequencySelect.options[frequencySelect.selectedIndex].text.toLowerCase() : 'monthly')}.`
                 : 'Budget uses the monthly equivalent.';
         }
+        updateBudgetTotal();
+        updateBudgetBuck();
     }
 
-    if (incomeInput) {
-        incomeInput.value = getPaycheckFromMonthly(state.budgetIncome, state.incomeFrequency);
-        const newInput = incomeInput.cloneNode(true);
-        incomeInput.parentNode.replaceChild(newInput, incomeInput);
-        newInput.addEventListener('input', updateIncomeFromPaycheck);
+    function collectPaychecks() {
+        if (!paycheckList) return 0;
+        let total = 0;
+        const rows = paycheckList.querySelectorAll('.paycheck-row');
+        rows.forEach(row => {
+            const amtInput = row.querySelector('.paycheck-amount');
+            const dateInput = row.querySelector('.paycheck-date');
+            const amount = parseFloat(amtInput?.value) || 0;
+            total += amount;
+            // Update matching state paycheck by date
+            const date = dateInput?.value;
+            if (date) {
+                const existing = state.paychecks.find(p => p.date === date);
+                if (existing) {
+                    existing.amount = amount;
+                } else {
+                    state.paychecks.push({ id: 'pay-' + Date.now() + Math.random().toString(36).slice(2, 7), date, amount });
+                }
+            }
+        });
+        return total;
+    }
+
+    function renderPaycheckList() {
+        if (!paycheckList) return;
+        const frequency = frequencySelect ? frequencySelect.value : (state.incomeFrequency || 'monthly');
+        if (frequency === 'monthly') {
+            paycheckList.innerHTML = '';
+            if (incomeInput) incomeInput.parentElement.style.display = 'flex';
+            return;
+        }
+        if (incomeInput) incomeInput.parentElement.style.display = 'none';
+
+        const dates = getPaycheckDatesInMonth(payDateInput ? payDateInput.value : state.paycheckDate, frequency, state.currentMonth);
+        if (dates.length === 0) {
+            paycheckList.innerHTML = '<p class="help-text" style="margin:12px 0 0 0;">Pick a payday date to see your checks for this month.</p>';
+            return;
+        }
+
+        let html = '<p class="help-text" style="margin:12px 0 8px 0;">Enter each paycheck amount for this month:</p>';
+        html += '<div class="paycheck-list">';
+        dates.forEach((date, idx) => {
+            const dateStr = date.toISOString().slice(0, 10);
+            const existing = state.paychecks.find(p => p.date === dateStr);
+            const amount = existing ? existing.amount : '';
+            html += `
+                <div class="paycheck-row" data-date="${dateStr}">
+                    <span class="paycheck-number">#${idx + 1}</span>
+                    <input type="date" class="paycheck-date" value="${dateStr}" readonly style="flex:1.2;">
+                    <div class="money-input" style="flex:1;margin-bottom:0;">
+                        <span class="dollar">$</span>
+                        <input type="number" class="paycheck-amount" placeholder="0.00" min="0" step="0.01" value="${amount ? amount.toFixed(2) : ''}">
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        paycheckList.innerHTML = html;
+
+        // Attach listeners
+        paycheckList.querySelectorAll('.paycheck-amount').forEach(input => {
+            input.addEventListener('input', () => {
+                const monthly = collectPaychecks();
+                updateIncomeDisplay(monthly);
+            });
+        });
+
+        // Initial sum
+        const monthly = collectPaychecks();
+        updateIncomeDisplay(monthly);
     }
 
     if (frequencySelect) {
         frequencySelect.value = state.incomeFrequency || 'monthly';
         frequencySelect.addEventListener('change', () => {
-            // Convert current monthly amount to new per-check amount so the display stays consistent
-            const currentMonthly = state.budgetIncome;
             state.incomeFrequency = frequencySelect.value;
-            const newInput = document.getElementById('budget-income-input');
-            if (newInput) newInput.value = getPaycheckFromMonthly(currentMonthly, frequencySelect.value);
-            updateIncomeFromPaycheck();
+            if (frequencySelect.value === 'monthly') {
+                if (incomeInput) {
+                    incomeInput.parentElement.style.display = 'flex';
+                    incomeInput.value = state.budgetIncome > 0 ? state.budgetIncome.toFixed(2) : '';
+                }
+                if (paycheckList) paycheckList.innerHTML = '';
+                updateIncomeDisplay(parseFloat(incomeInput?.value) || 0);
+            } else {
+                renderPaycheckList();
+            }
         });
     }
 
     if (payDateInput) {
         payDateInput.value = state.paycheckDate || '';
-        payDateInput.addEventListener('change', updateIncomeFromPaycheck);
+        payDateInput.addEventListener('change', () => {
+            state.paycheckDate = payDateInput.value;
+            if (frequencySelect && frequencySelect.value !== 'monthly') {
+                renderPaycheckList();
+            }
+        });
+    }
+
+    if (incomeInput) {
+        const newInput = incomeInput.cloneNode(true);
+        incomeInput.parentNode.replaceChild(newInput, incomeInput);
+        newInput.addEventListener('input', () => {
+            const val = parseFloat(newInput.value) || 0;
+            state.budgetIncome = val;
+            state.income = val;
+            updateIncomeDisplay(val);
+        });
+    }
+
+    // Initial render
+    if (frequencySelect && frequencySelect.value !== 'monthly') {
+        renderPaycheckList();
+    } else if (incomeInput) {
+        incomeInput.parentElement.style.display = 'flex';
+        incomeInput.value = state.budgetIncome > 0 ? state.budgetIncome.toFixed(2) : '';
+        updateIncomeDisplay(state.budgetIncome);
     }
 
     // Set recurring toggle for income
@@ -745,10 +862,6 @@ function initBudgetSetup() {
     document.querySelectorAll('#budget-setup .chip').forEach(chip => {
         chip.classList.toggle('active', state.budgetIncomeSources.includes(chip.dataset.type));
     });
-
-    // Update income display
-    const incomeDisplay = document.getElementById('budget-income-display');
-    if (incomeDisplay) incomeDisplay.textContent = '$' + formatMoney(state.budgetIncome);
 
     // Render extra income on budget page
     renderBudgetExtraIncome();
@@ -1117,19 +1230,34 @@ function updateBudgetTotal() {
 
 
 function saveBudgetPlanSilent() {
-    // Save income from budget page (input is per-check amount)
+    // Save income from budget page
     const incomeInput = document.getElementById('budget-income-input');
     const frequencySelect = document.getElementById('budget-income-frequency');
     const payDateInput = document.getElementById('budget-income-pay-date');
-    const perCheck = parseFloat(incomeInput?.value) || 0;
+    const paycheckList = document.getElementById('budget-paycheck-list');
     const frequency = frequencySelect?.value || state.incomeFrequency || 'monthly';
-    const monthly = getMonthlyFromPaycheck(perCheck, frequency);
-    if (monthly > 0) {
-        state.budgetIncome = monthly;
-        state.income = monthly;
-    }
     state.incomeFrequency = frequency;
     state.paycheckDate = payDateInput?.value || state.paycheckDate || '';
+
+    let monthly = 0;
+    if (frequency === 'monthly') {
+        monthly = parseFloat(incomeInput?.value) || 0;
+        state.paychecks = []; // clear paychecks when using monthly
+    } else {
+        // Sum paycheck entries
+        monthly = 0;
+        state.paychecks = [];
+        paycheckList?.querySelectorAll('.paycheck-row').forEach(row => {
+            const date = row.querySelector('.paycheck-date')?.value;
+            const amount = parseFloat(row.querySelector('.paycheck-amount')?.value) || 0;
+            if (date && amount > 0) {
+                monthly += amount;
+                state.paychecks.push({ id: 'pay-' + Date.now() + Math.random().toString(36).slice(2, 7), date, amount });
+            }
+        });
+    }
+    state.budgetIncome = monthly;
+    state.income = monthly;
 
     // Save recurring income toggle
     const incomeRecurringToggle = document.getElementById('budget-income-recurring');
