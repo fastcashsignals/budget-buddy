@@ -187,11 +187,20 @@
                     <h3>💵 Base Income</h3>
                     <div class="income-display" id="budget-income-display">$0</div>
                 </div>
-                <p class="help-text">How much money do you have coming in this month?</p>
+                <p class="help-text">Enter your per-check amount, how often you get paid, and your next payday.</p>
                 <div class="money-input compact">
                     <span class="dollar">$</span>
                     <input type="number" id="budget-income-input" placeholder="0.00" min="0" step="0.01">
                 </div>
+                <div class="income-frequency-row" style="display:flex;gap:10px;margin-top:12px;align-items:center;">
+                    <select id="budget-income-frequency" class="tracker-select" style="flex:1.5;margin-bottom:0;background:var(--card);-webkit-appearance:none;-moz-appearance:none;appearance:none;">
+                        <option value="monthly">Monthly</option>
+                        <option value="biweekly">Every 2 weeks</option>
+                        <option value="weekly">Weekly</option>
+                    </select>
+                    <input type="date" id="budget-income-pay-date" class="tracker-date" style="flex:1;margin-bottom:0;background:var(--card);-webkit-appearance:none;-moz-appearance:none;appearance:none;" placeholder="Pay date">
+                </div>
+                <p class="help-text" id="budget-income-calc-note" style="margin-top:8px;font-size:12px;">Budget uses the monthly equivalent.</p>
                 <div class="income-breakdown" id="budget-income-breakdown">
                     <p class="help-text">Where's it coming from? (pick all that apply)</p>
                     <div class="chip-grid">
